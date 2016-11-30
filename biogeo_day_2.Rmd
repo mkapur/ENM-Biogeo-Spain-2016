@@ -1,0 +1,533 @@
+---
+title: 'Ecological & Evolutionary Biogeography Day 2: Intro to Spatial Data in R'
+author: "<a href = 'http://www.maiarkapur.wordpress.com'>Maia Kapur</a href>"
+date: "29 Nov 2016 - Barcelona, Spain"
+output: html_notebook 
+
+---
+##<span style="color:#0040FF">MORNING SESSION - Nick Matzke</span>
+### Software and Tools for working with spatial data
+#### *ARCGIS*: A windows program that costs alot and is huge. A big, integrated package that allows you to work with all data types in a GUI environment. Useful for building a big, complex map to print and provide to users & producing spatial statistics.
+#### *Grass*: Free GIS - Nick hasn't had any luck
+#### *ERDAS, ENVI*: For satellite data (huge files)
+#### <span style="color:#DF013A">*R*: Making figures for a paper, a simple map or cartoon - more on this below. Packages for spatial data in R have developers and users who hangout on r-sig-geo listserv. Also check out r-sig-phylo. Options include *sp, maptools, raster*, and more.</span>
+### Basic Data Types
+#### *Rasters*: "raster is faster". Representing data as a series of boxes. You will have a satelitte image or elevation grid, with implied ordering. These are fast, because you don't need spatial coordinates for each cell. You'll need metadata about colors and rows/columns included
+#### *Vectors*: "vector is correct-er". Looks like a series of points, lines, and polygons. These have exact coordinates, such as a lat-long. Underlying this is a reference table. This can result in a complex list of points and lines, so be mindful of conversions.<br>
+### PART 0: A Tutorial of Spatial Data
+#### <span style="color:#DF013A">*Note: several of these plots are hashed-out and not displayed to keep this document short. Simply remove the '#' before the plot() command to plot them in your own console.*</span>
+#### <a href = "www.nickmatzke.net">Click here </a href>to check out the code used to make Nick's map of where he's been. 
+#### <a href = "https://github.com/Pakillo/R-GIS-tutorial"> Click here</a href> to view the R-GIS Tutorial Github by Francisco Rodriguez-Sanchez .You can download the <a href = "https://github.com/Pakillo/R-GIS-tutorial/blob/master/R-GIS_tutorial.Rmd#vector"> RMD</a href> from that file from Github directly, but I have copied & annotated the code used specifically in-class here.<br>
+```{r, message = F, warning = F}
+setwd("C:/Users/M Kapur/Dropbox")
+# #### Basic packages
+# library(sp)         # classes for spatial data
+# library(raster)     # grids, rasters
+# library(rasterVis)  # raster visualisation
+# library(maptools)
+library(rgeos) # and their dependencies
+## Getting maps for countries
+library(dismo)
+mymap <- gmap("India")   # choose whatever country
+# plot(mymap)
+# ?gmap ##info on how "getting a google map" works
+```
+Choose map type:
+```{r, message=FALSE}
+mymap <- gmap("India", type="satellite")  
+# plot(mymap)
+```
+Choose zoom level:
+```{r, message=FALSE}
+mymap <- gmap("India", type="satellite", exp=3)
+# plot(mymap)
+```
+Save the map as a file in your working directory for future use
+```{r message=FALSE}
+mymap <- gmap("India", type="satellite", filename="India.gmap")    
+```
+Now get a map for a region drawn at hand
+```{r eval=FALSE}
+mymap <- gmap("Europe")
+# plot(mymap)
+# select.area <- drawExtent()   
+# now click 2 times on the map to select your region
+# mymap <- gmap(select.area)
+# plot(mymap)
+# See ?gmap for many other possibilities
+```
+`RgoogleMaps`: Map your data onto Google Map tiles <a name="rgooglemaps"></a>
+```{r message=FALSE, results='hide'}
+library(RgoogleMaps) 
+```
+Get base maps from Google (a file will be saved in your working directory)
+```{r message=FALSE, results='hide'}
+# newmap <- GetMap(center=c(36.7,-5.9), zoom =10, destfile = "newmap.png", maptype = "satellite")   
+# 
+# # Now using bounding box instead of center coordinates:
+# newmap2 <- GetMap.bbox(lonR=c(-5, -6), latR=c(36, 37), destfile = "newmap2.png", maptype="terrain")   
+# 
+# # Try different maptypes
+# newmap3 <- GetMap.bbox(lonR=c(-5, -6), latR=c(36, 37), destfile = "newmap3.png", maptype="satellite")
+```
+Now plot data onto these maps, e.g. these 3 points
+```{r}
+# PlotOnStaticMap(lat = c(36.3, 35.8, 36.4), lon = c(-5.5, -5.6, -5.8), zoom= 10, cex=4, pch= 19, col="red", FUN = points, add=F)
+```
+
+`googleVis`: visualise data in a web browser using Google Visualisation API <a name="googlevis"></a>
+```{r message=FALSE}
+library(googleVis) 
+```
+Run `demo(googleVis)` to see all the possibilities
+```{r setOptions, echo=FALSE}
+op <- options(gvis.plot.tag = "chart")  
+# necessary so that googleVis works with knitr, see http://lamages.blogspot.co.uk/2012/10/googlevis-032-is-released-better.html
+```
+Example: plot country-level data
+```{r results='asis', tidy=FALSE, eval=TRUE}
+data(Exports)    # a simple data frame
+# Geo <- gvisGeoMap(Exports, locationvar="Country", numvar="Profit", 
+                  options=list(height=400, dataMode='regions'))
+# plot(Geo)
+```
+Using `print(Geo)` we can get the HTML code to embed the map in a web page!
+Example: Plotting point data onto a google map (internet)
+```{r results='asis', tidy=FALSE, eval=TRUE, message = FALSE}
+data(Andrew)
+# M1 <- gvisMap(Andrew, "LatLong", "Tip", options=list(showTip=TRUE, showLine=F, enableScrollWheel=TRUE, mapType='satellite', useMapTypeControl=TRUE, width=800,height=400))
+# plot(M1)
+## This will pop up in a browser window and is therefore not displayed here - mine looked like the below
+```
+![The map that pops up in-browser using Andrew data](http://i66.tinypic.com/t71jme.png)
+
+### PART I: Spatial Vector Data (points, lines, polygons) 
+[Part 3 of Github tutorial]
+```{r}
+## this part runs very slowly as since the github tutorial was made, thousands of records have been added for this species.
+# library(dismo)      # check also the nice "rgbif" package! 
+# laurus <- gbif("Laurus", "nobilis")      
+# # get data frame with spatial coordinates (points)
+# locs <- subset(laurus, select=c("country", "lat", "lon"))
+# head(locs)    # a simple data frame with coordinates
+# 
+# # Discard data with errors in coordinates:
+# locs <- subset(locs, locs$lat<90)
+```
+<span style="color:#DF013A">Making your own dataset- Nick had us do this because the internet had problems. In reality, you'll likely use read.csv() or read.table() to bring in your own data of this format, and use the coordinates() function to re-classify your spatial coordinates.</span>
+```{r, warning = F}
+country = c("Spain","Spain","Spain","Spain","Spain")
+lat = c(36.12, 38.26, 36.11, 36.87, 37.30)
+lon = c(-5.579, -5.207, -5.534, -5.312, -1.918)
+locs = cbind(country,lat,lon)
+locs = as.data.frame(locs, stringsAsFactors = FALSE)
+locs$lat = as.numeric(locs$lat)
+locs$lon = as.numeric(locs$lon)
+coordinates(locs) = c('lon','lat') ## set spatial coordinates
+plot(locs)
+```
+
+Define spatial projection. The projection and datum are how we display the 3D globe on the flat plane of your screen. *You will want to look up which ellipse and datum best fit your part of the world when making your own maps.* Consult the appropriate PROJ.4 description here: http://www.spatialreference.org/. <span style="color:#DF013A">You can use the function dfnums_to_numeric() in the BioGeoBEARS package to auto-convert your coordinates.</span>
+```{r, warning = FALSE, message = FALSE}
+crs.geo <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84")    
+# geographical, datum WGS84. This is how we morph the lat-longs given in the data frame into a given 'transformation' version. CRS is coordinate-reference-system. Because we set 'proj' to longlat, this data remains UNPROJECTED, as you can see in summary(locs) below.
+proj4string(locs) <- crs.geo     # define projection system of our data
+summary(locs) ## tells you the status, class and sumarry of your data. 
+```
+Quickly plotting point data on a map. This adds in the coast line from the web for the points near your data - you can modify the coarsness or resolution of your data.
+```{r, message = FALSE, warning = FALSE}
+plot(locs, pch=20, col="steelblue")
+library(rworldmap)
+# library rworldmap provides different types of global maps, e.g:
+data(coastsCoarse) 
+data(countriesLow)
+plot(coastsCoarse, add=T)
+```
+Subsetting and mapping again *note -- this is using our fake data since the slow internet prevented us from using the large GBIF download. So don't run out and publish this!*
+```{r}
+table(locs$country)     # see localities of Laurus nobilis by country
+locs.gb <- subset(locs, locs$country=="United Kingdom")    # select only locs in UK
+plot(locs.gb, pch=20, cex=2, col="steelblue")
+title("Laurus nobilis occurrences in UK")
+plot(countriesLow, add=T)
+summary(locs.gb)
+```
+#### Mapping Vectorial Data [points/lines/polylines]
+using gmap from dismo:
+```{r}
+gbmap <- gmap(locs.gb, type="satellite")
+#locs.gb.merc <- Mercator(locs.gb)    # Google Maps are in Mercator projection. 
+# This function projects the points to that projection to enable mapping
+plot(gbmap)
+# points(locs.gb.merc, pch=20, col="red")
+```
+using RgoogleMaps -- not compatible with slow 'net:
+```{r, warning = F, message = F}
+require(RgoogleMaps)
+locs.gb.coords <- as.data.frame(coordinates(locs.gb))    # retrieves coordinates 
+  # (1st column for longitude, 2nd column for latitude)
+PlotOnStaticMap(lat = locs.gb.coords$lat, lon = locs.gb.coords$lon, 
+                zoom= 5, cex=1.4, pch= 19, col="red", FUN = points, add=F)
+## Download base map from Google Maps and plot onto it
+
+map.lim <- qbbox (locs.gb.coords$lat, locs.gb.coords$lon, TYPE="all")    # define region 
+  # of interest (bounding box)
+mymap <- GetMap.bbox(map.lim$lonR, map.lim$latR, destfile = "gmap.png", maptype="satellite")
+# see the file in the wd
+PlotOnStaticMap(mymap, lat = locs.gb.coords$lat, lon = locs.gb.coords$lon, 
+                zoom= NULL, cex=1.3, pch= 19, col="red", FUN = points, add=F)
+
+## Using different background (base map)
+
+mymap <- GetMap.bbox(map.lim$lonR, map.lim$latR, destfile = "gmap.png", maptype="hybrid")
+PlotOnStaticMap(mymap, lat = locs.gb.coords$lat, lon = locs.gb.coords$lon, 
+                zoom= NULL, cex=1.3, pch= 19, col="red", FUN = points, add=F)
+```
+Converting between formats, reading in, and saving spatial vector data
+```{r}
+## Exporting KML (Google Earth)
+writeOGR(locs.gb, dsn="locsgb.kml", layer="locs.gb", driver="KML")
+## Reading KML
+newmap <- readOGR("locsgb.kml", layer="locs.gb")
+## Save as shapefile
+writePointsShape(locs.gb, "locsgb")
+## Reading shapefiles
+gb.shape <- readShapePoints("locsgb.shp")
+plot(gb.shape)
+## Use readShapePoly to read polygon shapefiles, and readShapeLines to read polylines. See also shapefile in raster package.
+
+```
+Changing projection of spatial vector data:
+spTransform (package sp) will do the projection as long as the original and new projection are correctly specified.
+Projecting point datasets:
+To illustrate, let's project the dataframe with Laurus nobilis coordinates that we obtained above:
+```{r}
+summary(locs)
+## The original coordinates are in lat lon format. Let's define the new desired projection: Lambert Azimuthal Equal Area in this case (look up parameters at http://spatialreference.org)
+
+crs.laea <- CRS("+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs") # Lambert Azimuthal Equal Area
+locs.laea <- spTransform(locs, crs.laea)    # spTransform makes the projection
+
+## Projecting shapefile of countries
+
+plot(countriesLow)    # countries map in geographical projection
+country.laea <- spTransform(countriesLow, crs.laea)  # project
+## Let's plot this:
+
+plot(locs.laea, pch=20, col="steelblue")
+plot(country.laea, add=T)
+
+# define spatial limits for plotting
+plot(locs.laea, pch=20, col="steelblue", xlim=c(1800000, 3900000), ylim=c(1000000, 3000000))
+plot(country.laea, add=T)
+```
+### PART II: RASTERS [part 4 of Github Tutorial]
+Downloading raster climate data from internet 
+The getData function from the dismo package will easily retrieve climate data, elevation, administrative boundaries, etc. Check also the excellent rWBclimate package by rOpenSci with additional functionality.
+```{r}
+## un-hash the following line to download the data
+# this will download 
+# global data on minimum temperature at 10' resolution
+# tmin <- getData("worldclim", var="tmin", res=10)  
+
+tmin1 <- raster(paste(getwd(), "/wc10/tmin1.bil", sep=""))   # Tmin for January - loads a raster data. Easy! The raster function reads many different formats, including Arc ASCII grids or netcdf files (see raster help). And values are stored on disk instead of memory! (useful for large rasters)
+fromDisk(tmin1)
+## Let's examine the raster layer:
+
+tmin1 <- tmin1/10    # Worldclim temperature data come in decimal degrees 
+tmin1    # look at the info
+bbox(tmin1) # bounding box - rows and columns
+CRS(tmin1)
+plot(tmin1)
+project4string(tmin1)
+```
+####Creating a raster stack <br>
+A raster stack is collection of many raster layers with the same projection, spatial extent and resolution. Let's collect several raster files from disk and read them as a single raster stack:
+```{r}
+library(gtools)
+file.remove(paste(getwd(), "/wc10/", "tmin_10m_bil.zip", sep=""))
+list.ras <- mixedsort(list.files(paste(getwd(), "/wc10/", sep=""), full.names=T, pattern=".bil"))
+list.ras   # I have just collected a list of the files containing monthly temperature values
+tmin.all <- stack(list.ras)
+tmin.all
+tmin.all <- tmin.all/10
+plot(tmin.all)
+
+## A rasterbrick is similar to a raster stack (i.e. multiple layers with the same extent and resolution), but all the data must be stored in a single file on disk.
+
+tmin.brick <- brick(tmin.all)   # creates rasterbrick
+
+## The select to crop function doesn't work in R Notebook.
+plot(tmin1)
+newext <- drawExtent()    # click twice on the map to select the region of interest
+tmin1.c <- crop(tmin1, newext)
+plot(tmin1.c)
+```
+Define spatial projection - can use on your cropped data or otherwise. This is how we impose a projection.
+```{r}
+crs.geo    # defined above
+projection(tmin1) <- crs.geo
+projection(tmin.all) <- crs.geo
+tmin1    # notice info at coord.ref.
+
+hist(tmin1) ## simple histogram of observed valeus
+pairs(tmin.all) ## correlations across all months
+persp(tmin1) ## perspective plot of Z axis (could be any response variable)
+contour(tmin1)
+contourplot(tmin1)
+#levelplot(tmin1)
+#plot3D(tmin1)
+#bwplot(tmin.all)
+#densityplot(tmin1)
+```
+Spatial Autocorrelation via Moran's I. Shows places where temperatures change rapidly and others where temperature is more stable
+```{r}
+Moran(tmin1)    # global Moran's I
+tmin1.Moran <- MoranLocal(tmin1)
+plot(tmin1.Moran)
+```
+Extract values from raster 
+```{r}
+## Use extract function:
+head(locs)    # we'll obtain tmin values for our points and put them in same projection as our raster
+projection(tmin1) <- crs.geo
+locs$tmin1 <- extract(tmin1, locs)    # raster values are incorporated to the dataframe
+head(locs)
+
+plot(tmin1)
+# reg.clim <- extract(tmin1, drawExtent())  # click twice to 
+  # draw extent of the region of interest 
+summary(reg.clim)
+# rasterToPoints
+tminvals <- rasterToPoints(tmin1)
+head(tminvals)
+## And also, the click function will get values from particular locations in the map
+plot(tmin1)
+click(tmin1, n=3)   # click n times in the map to get values
+```
+Using Wrld_simpl
+```{r}
+data(wrld_simpl)
+plot(wrld_simpl, ylim=c(15,25), xlim = c(-165,-150))
+```
+### Changing raster resolution 
+```{r}
+# Use aggregate function:
+tmin1.lowres <- aggregate(tmin1, fact=2, fun=mean)
+tmin1.lowres
+# tmin1.c     # compare
+par(mfcol=c(1,2))
+plot(tmin1, main="original")
+plot(tmin1.lowres, main="low resolution")
+```
+<span style="color:red">Spline interpolation</span>
+```{r, warning = F, message = F, eval = F}
+library(fields)
+xy <- data.frame(xyFromCell(tmin1.lowres, 1:ncell(tmin1.lowres)))    # get raster cell coordinates
+head(xy)
+vals <- getValues(tmin1.lowres)
+spline <- Tps(xy, vals)    # thin plate spline
+intras <- interpolate(tmin1, spline)
+intras    # note new resolution
+plot(intras)  
+intras <- mask(intras, tmin1.c)   # mask to land areas only
+plot(intras)
+title("Interpolated raster")
+```
+### Elevation, slope and aspect
+```{r}
+## unhash the next line to download Spain data
+# elevation <- getData('alt', country='ESP')
+x <- terrain(elevation, opt=c('slope', 'aspect'), unit='degrees')
+plot(x)
+
+slope <- terrain(elevation, opt='slope')
+aspect <- terrain(elevation, opt='aspect')
+hill <- hillShade(slope, aspect, 40, 270)
+plot(hill, col=grey(0:100/100), legend=FALSE, main='Spain')
+plot(elevation, col=rainbow(25, alpha=0.35), add=TRUE)
+```
+### Saving and exporting raster data 
+```{r}
+## Saving raster to file:
+#writeRaster(tmin1, filename="tmin1.c.grd")   
+#writeRaster(tmin.all, filename="tmin.all.grd")
+## writeRaster can export to many different file types, see help.
+## Exporting to KML (Google Earth)
+
+tmin1.c <- raster(tmin.all, 1)
+# KML(tmin1, file="tmin1.kml")  
+# KML(tmin.all)     # can export multiple layers
+```
+Downloading a shapefile from ARCGIS
+```{r}
+fn = paste0(getwd(),"/states.shp") ## make sure all relevant shape files are in there (.dbf etc)
+states = readShapePoly(fn)
+states
+plot(states)
+```
+## <span style="color:#0040FF">AFTERNOON SESSION - Dan Warren</span>
+### Global Biodiversity Information Facility: Data aggregated from museums and other collections around the world. You need to create an account: http://www.gbif.org/<br>
+We downloaded data for Iberolacerta occurences in 2006 in Spain & did some manipulations to make it in the proper format. You can alternatively do this in R with the rgbif function as below -- in this case, we do some data cleanup in R once loading the data.
+```{r}
+library(rgbif)
+## get the data using functions
+ibl = occ_search(scientificName = "iberolacerta")
+# str(ibl) ## what you want is within ibl$data
+head(ibl$data)
+ibl = as.data.frame(ibl$data)
+
+## some data exploration
+# unique(ibl$genus)
+# unique(ibl$species)
+
+## Shrink it down to columns of interest (IDs, lat & long)
+## a way with cbind which sucks
+# ibl.small = cbind(ibl$species, ibl$decimalLatitude, ibl$decimalLongitude)
+
+## this is better because it keeps the proper classes and column names
+keeps = c('species','decimalLatitude','decimalLongitude')
+ibl.small = ibl[,keeps]
+## rename the columns to be shorter
+colnames(ibl.small) <- c('species','lat','lon')
+
+## drop NAs using the complete.cases() function, which will return TRUE or FALSE for those that have values in each column. Using square bracket indexes helps us ask for rows of ibl.small for which complete.cases() returns TRUE; leaving the part after the comma empty means we want all rows.
+ibl.small = ibl.small[complete.cases(ibl.small),]
+## take out only unique observations
+ibl.small <- unique(ibl.small)
+# table(ibl.small$species)
+
+library(dismo)
+## set up the bounding box of your map
+ibl.extent <- extent(min(ibl.small$lon -1),
+                     max(ibl.small$lon + 1),
+                     min(ibl.small$lat - 1),
+                     max(ibl.small$lat + 1))
+
+ibl.map = gmap(ibl.extent, type = 'satellite', latlon = TRUE)
+plot(ibl.map)
+## in this next line, we are adding in the points of the observations and transforming them using the Mercator function. We then color it using the 'col' argument based on column 1 (species). You can also say things like col = 'blue', or leave it empty (this will result in black points by default).
+points(Mercator(ibl.small[,c('lon','lat')]), pch = 16, col = as.factor(ibl.small[,1]))
+```
+### Working with virtualspecies (& Dan's rant)
+Typically, we simulate data under a known truth. We generate simulated data and use a known method to *infer* a model of our population. The steps happen like this:<br>
+1. We make some fake population or set of relationships<Br>
+2. Generate expected outcomes (E.g. sequence data)<br>
+3. Analyze that fake data (e.g. build a tree -- this is the inference step)<br>
+4. Compare the analysis outcomes to the original 'truth' used to drive the simulation. Also known as validation. *This is only as good as your method.*<br>
+<span style="color:blue">But, niche models have rarely done this! </span>In niche modeilng, they typically:<Br>
+1. Get data (like observations @ lats and longs)<Br>
+2. Take out a subset ("test" vs "training" datasets)<br>
+3. Build a model on that training subset, and check how well it predicts the left-out data.<br>
+The problem is, when we do this sort of train-test validation dataset we can't well predict the range of suitable habitat. Not all combinations of predictor variables exist in the environment. So, we need to demonstrate if/what methods are actually effective at showing the suitability of habitat. *Predicting left-out data well does not mean you do a good job predicting suitable habitat.*
+```{r, warning = F, message = F, fig.height = 8, fig.width = 12}
+library(virtualspecies)
+## download from bioclim data site
+# all.worldclim <- getData('worldclim', res = 10, var = 'bio')
+
+## define the boudning box/extent for spain (in degrees)
+spain.extent = extent(-10,4,35,45)
+## clip your downloaded data to that extent
+spain.worldclim = crop(all.worldclim, spain.extent)
+plot(spain.worldclim[[1]])
+```
+*Note: In this part, Dan re-did the generateRandomSp function and renamed it rando.sp.narrow; in my example, the rando.sp object is the same (with niche.breadth specified as narrow).* We can use the following output to test how well we distinguish pretty-good habitat from better/more suitable habitat. We can also test if/what other BioClim layers are strongly attributive to this species' distribution.
+```{r, warning = F, message = F, fig.height = 6, fig.width = 12}
+## generate a random species by telling it what variables are important out of our worldclim raster stack (which has 19 variables) - here we're picking the first and twelfth layers (temp and precip)
+rando.sp <- generateRandomSp(spain.worldclim[[c(1,12)]],
+                             niche.breadth =  'narrow',
+                             PA.method = 'threshold',
+                             beta = 0.6)
+## this has created an artificial species with a suitability map and pres-abs data.
+# rando.sp$details ## tells you what variables it used to generate this species
+rando.sp$pa.raster ## your presence absence raster
+plotResponse(rando.sp) 
+# rando.sp$PA.conversion
+## extract points by randomly sampling from your generated population. If you say correct.by.suitability = TRUE, you say that your species is more likely to be sampled from high-suitability habitat (seems obvious...?)
+rando.sp.points <- sampleOccurrences(rando.sp, 80, correct.by.suitability = T)
+# head(rando.sp.points$sample.points)
+```
+Overlaying that data on the regional maps of Spain.
+```{r, warning = F, message = F}
+library(dismo)
+library(rgeos)
+# spain.regions = getData('GADM', country = 'ESP', level = 1)
+
+## we want it to be less detailed, so the next function simplifies it and shrinks the file size.
+spain.regions <- gSimplify(spain.regions, 
+                           tol = 0.005, 
+                           topologyPreserve = T)
+
+plot(rando.sp$suitab.raster)
+plot(spain.regions[c(1,4)], add = T)
+## say we only are interested in a geo-political region, we can clip down our simulated species data to that polygon we are interested in.
+rando.sp <- limitDistribution(rando.sp,
+                              geographical.limit = 'polygon',
+                              area = spain.regions[c(1,4)])
+
+## Generate presence points from that distribution
+rando.sp.points <- sampleOccurrences(rando.sp, 10, correct.by.suitability = T)
+# plot them 
+plot(rando.sp$suitab.raster)
+points(rando.sp.points$sample.points[,1:2])
+```
+### Simulate a response by customizing your own function, which can intake a predictor value and output a suitability value. This example makes one with a linear response and another with quadratic. Then pops it into the virtual species framework.
+```{r}
+linear = function(x, slope, int){
+  return(x*slope+int) ## a basic linear equation
+}
+quad = function(x,B0,B1,B2){
+  return(B2*x^2+B1*x+B0)
+}
+## make sure to name the layers based on what you are using as input parameters. In this case, bio1 is the first predictor brought in from the worldclim data. Here's how virtualspecies reads in and assigns your new functions to a specific predictor. Alternatively, you could specify a random # generator or something crazy. 
+my.responses = formatFunctions(bio1 = c(fun = 'linear',
+                                      slope = 1,
+                                      int = -2),
+                               bio12 = c(fun = 'quad',
+                                      B2 = 0.1, 
+                                      B1 = 3, 
+                                      B0 = 5))
+## the next bit is how to re-create the generateSp process now using what we've espablished as our formatted functions.
+manual.sp <- generateSpFromFun(raster.stack = spain.worldclim[[c(1,12)]],
+                               parameters = my.responses,
+                               plot = TRUE)
+
+```
+```{r, include = T, eval = F}
+## A function called "step" that taxes an x min and max and returns 0 when x < min or > max and a 1 otherwise. You'll need an NA trap since there are empty cells in your data frame
+step = function(x, xmin, xmax){
+  if(is.na(x)){
+    return(NA)
+  } else if(x < xmin | x > xmax){
+    return(0)
+  } else {
+    return(1)
+  }}
+  
+step(5,2,7) ## should return 1 because 5 is in the range of 2 and 7
+step(5,2,4) ## should return 0 as 5 is out of range
+
+my.responses = formatFunctions(bio1 = c(fun = 'linear',
+                                      slope = 1,
+                                      int = -2),
+                               bio12 = c(fun = 'step',
+                                      xmin = 0.1, 
+                                      xmax = 3))
+## the next bit is how to re-create the generateSp process now using what we've espablished as our formatted functions.
+manual.sp <- generateSpFromFun(raster.stack = spain.worldclim[[c(1,12)]],
+                               parameters = my.responses,
+                               plot = TRUE)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+

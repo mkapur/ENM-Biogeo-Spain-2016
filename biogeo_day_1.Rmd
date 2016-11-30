@@ -12,10 +12,10 @@ output: html_notebook
 #### Functions - just a brief overview here. See Part IV for writing functions.
 ```{r}
 ## A function is a little machine. The input goes in parentheses:
-    seq(1,10)
-    print(hello)
-    > ## this symbol means a new line of code
-    + ## this means that R is waiting for you to say something. Typically you will forget to add a close-parentheses, hit enter, and the little plus will show up. You can either add in whatever you were missing, or hit ESC to get the ">" back.
+seq(1,10)
+print('hello')
+    ## > this symbol means a new line of code
+    ## + this means that R is waiting for you to say something. Typically you will forget to add a close-parentheses, hit enter, and the little plus will show up. You can either add in whatever you were missing, or hit ESC to get the ">" back.
 ```
 #### Packages - for more functions
 ```{r, warning = F, message = F}
@@ -25,9 +25,9 @@ library(ggplot2) ## loads the ggplot2 which is full of functions that someone el
 
 qplot(rnorm(1000))
 ## This builds in a qplot (quick histogram plot) of the result of rnorm(1000). Rnorm is a normal distribution generator, and the number you provide to rnorm indicates how many numbers you want to generate. You can also do this in two separate steps:
-    numbers <- rnorm(1000)
-    qplot(numbers)
-    runif(1000) ## is a similar function that produces a UNIForm distribution as opposed to a NORMal one.
+numbers <- rnorm(1000)
+qplot(numbers)
+## runif(1000) is a similar function that produces a UNIForm distribution as opposed to a NORMal one.
 ```
 #### Help Files - should be provided for every package/function in R
 ##### In RStudio you can use the tab keys after writing a function to remind yourself what you can put into that function. Another tip is to type a question mark before the function's name which will pop up the HELP window in the bottom-right. In the window, you'll see each term that the function will accept, and a quasi-informative description of how that input was designed when someone created it. Scroll dow and it should tell you what each argument (input) means.
@@ -35,17 +35,16 @@ qplot(rnorm(1000))
 ?rnorm
 help(rnorm) ## does the same thing
 ??rnorm ## double question marks will do a "search" for functions that contain that term - useful if you don't know the name of the function exactly.
-rnorm ## In the console window, put the mouse cursor on the function (e.g. "source") and hit F1 to get help
+## In the console window, put the mouse cursor on the function (e.g. "source") and hit F1 to get help
 ```
 ## PART II: ASSIGNING VARIABLES AND CLASSES <Br>
 #### Variables: A small piece of information, assigned using the = or <- symbols. Once you assign a variable, they should pop up in your environment tab.  Technically, the <- symbol is the assignment operator, and there are many who feel this is superior to the equals sign. In general, it avoids confusion. Don't confuse = with ==. The latter asks "is equal to?"
 ```{r, message = F, warning = F}
 x = 8
 x == 9
-FALSE
 y <- 10
 x + y 
-18
+
 ## Running the above function does not change the value of x or y. You could change this as follows
 x = x + y
 ## Now x is 18, and you've overwritten the previous instance of x as 8.
@@ -53,10 +52,9 @@ x = x + y
 ```
 #### The class  is the 'type' of your variable. <br> 
 ##### You can find out what type (class) your variable is by using the class() function. This is important because certain functions will only accept given classes, for example, you can't add together two words (class character) class(x) should return numeric.In this mini-example, you've tricked R into thinking that T is the number 4, then you later ask if 3 'is equal to' T, for which it returns F (correctly). But if later you wanted to find out if a column of data had  T or F (say, from a survey), you'd be in trouble, since R wouldn't be reading in 'T' as TRUE, but as the number 4!! In general, if you mess this up, use rm() to remove whatever you've done. **When you first start out, class errors will account for many code breaks. Make sure you're feeding functions the right type of data and/or variables, otherwise you'll get an error**.
-```{r, message = F, warning = F}
+```{r, message = F, warning = F, eval = F}
 x = 'super classy'
 y = 10
-x + y
 
 class(x) ## will be character (meaning letters).
 attributes(x) ## will return the class and its name (e.g. "superclassy"
@@ -64,7 +62,6 @@ attributes(x) ## will return the class and its name (e.g. "superclassy"
 ## Boolean: T/F. You can indicate these using T or TRUE (all caps); or F or FALSE. These are important, logical statements, and for this reason you can/should NOT assign a variable to either of these terms.
 x = 'super'
 y = 10
-x + y
 class(x)
 T = F
 T
@@ -89,7 +86,7 @@ wanted = c(2,5,6)
 x[wanted]
 ```
 #### Working with vectors and naming columns.
-```{r, message = F, warning = F}
+```{r, message = F, warning = F, eval = FALSE}
 ## c() is how you concatenate together a bunch of things, like numbers, to create a vector.
 x = c(7,5,4,8,3,1)
 class(x)
@@ -106,7 +103,7 @@ y[c('eeny')]
 
 ```
 #### Multi-dimensional data - more indexing in matrices. 
-```{r, message = F, warning = F}
+```{r, message = F, warning = F, eval = F}
 ## creating a matrix - you won't do this too often
 col1 = c(1,2,3)
 col2 = c(4,5,6)
@@ -277,9 +274,64 @@ paste("The max is ",max(mean(x),sd(x)))
 ## rm(ls)
 ## source(processAttitude.R)
 ```
-## PART V. PREVIEW OF OTHER R PACKAGES
+## PART V. More functions with Ape.
+```{r, warning = F, message = F}
+#install.packages('ape')
+library(ape)
+# require(GGally)
+data("carnivora")
+ggpairs(carnivora[,6:10]) ## the Species column has too many levels
+## get means of columns 6 thru 12, but only for Canids (family = Canidae)
+
+## slow going methods
+## with indexing
+df0 <- carnivora[carnivora[,'Family'] == 'Canidae',]
+colMeans(df0[,6:12])
+
+## with subset
+df1 <- subset(carnivora, Family == 'Canidae')
+colMeans(df1[,6:12])
+
+## shorthand - mixes together the indexing steps
+colMeans(carnivora[carnivora[,'Family'] == 'Canidae',][,6:12])
+
+## Get the FAMILY for each species that has an average female body weight over 20 (this is given by column SW)
+
+## using indices - two steps
+## first take out the ones with the female body weight desired
+highsw = carnivora[carnivora[,'SW'] > 20,]
+## then view the family column of that subset
+highsw[,c('Species','Family')]
+
+## using indices - shorthand
+carnivora[carnivora[,'SW'] > 20,c('Species','Family')]
+
+## shorthand with unique() and subset()
+unique(subset(carnivora, SW > 20)[,c('Species','Family')])
+```
+## PART V.5 IF STATEMENTS 
+#### Here we're leveraging the TRUES and FALSES. These look like functions, because they have curly brackets. Basically the if() function evaluates whatever is in parenthesis; if that returns TRUE, it does whatever's inside the curlies. If the statement is FALSE, nothing happens OR you can tell it to do something ELSE with an ELSE statement.
 ```{r}
+x = 4
+if(x == 5){
+  print("hooray!")
+  } else {
+    print('boo!')
+  }
+## change x and re-run it to change the outcome.
+
+## write a function that takes two numbers & returns column means for columns between those two numbers (eg 3,6 would be columns 3 thru 6). But since there are only 17 columns, don't run this if one number is greater than 17 -- give an error.
+pickmeans = function(n){
+  if(n > 15){
+    print('Sorry, your specified number is too high. Sincerly, Siri')
+  } else{
+    nums = colMeans(carnivora[,6:n])
+    return(nums)
+  }
+}
+
+pickmeans(27)
+pickmeans(7)
 
 ```
-
 
