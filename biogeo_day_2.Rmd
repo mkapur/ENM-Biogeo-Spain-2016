@@ -2,16 +2,18 @@
 title: 'Ecological & Evolutionary Biogeography Day 2: Intro to Spatial Data in R'
 author: "<a href = 'http://www.maiarkapur.wordpress.com'>Maia Kapur</a href>"
 date: "29 Nov 2016 - Barcelona, Spain"
-output: html_notebook 
-
+output: 
+  html_notebook:
+    toc: yes
 ---
+
 ##<span style="color:#0040FF">MORNING SESSION - Nick Matzke</span>
-### Software and Tools for working with spatial data
+####<B> Software and Tools for working with spatial data</b>
 #### *ARCGIS*: A windows program that costs alot and is huge. A big, integrated package that allows you to work with all data types in a GUI environment. Useful for building a big, complex map to print and provide to users & producing spatial statistics.
 #### *Grass*: Free GIS - Nick hasn't had any luck
 #### *ERDAS, ENVI*: For satellite data (huge files)
 #### <span style="color:#DF013A">*R*: Making figures for a paper, a simple map or cartoon - more on this below. Packages for spatial data in R have developers and users who hangout on r-sig-geo listserv. Also check out r-sig-phylo. Options include *sp, maptools, raster*, and more.</span>
-### Basic Data Types
+####<b> Basic Data Types</b>
 #### *Rasters*: "raster is faster". Representing data as a series of boxes. You will have a satelitte image or elevation grid, with implied ordering. These are fast, because you don't need spatial coordinates for each cell. You'll need metadata about colors and rows/columns included
 #### *Vectors*: "vector is correct-er". Looks like a series of points, lines, and polygons. These have exact coordinates, such as a lat-long. Underlying this is a reference table. This can result in a complex list of points and lines, so be mindful of conversions.<br>
 ### PART 0: A Tutorial of Spatial Data
@@ -310,7 +312,7 @@ Using Wrld_simpl
 data(wrld_simpl)
 plot(wrld_simpl, ylim=c(15,25), xlim = c(-165,-150))
 ```
-### Changing raster resolution 
+#### Changing raster resolution 
 ```{r}
 # Use aggregate function:
 tmin1.lowres <- aggregate(tmin1, fact=2, fun=mean)
@@ -334,7 +336,7 @@ intras <- mask(intras, tmin1.c)   # mask to land areas only
 plot(intras)
 title("Interpolated raster")
 ```
-### Elevation, slope and aspect
+#### Elevation, slope and aspect
 ```{r}
 ## unhash the next line to download Spain data
 # elevation <- getData('alt', country='ESP')
@@ -347,7 +349,7 @@ hill <- hillShade(slope, aspect, 40, 270)
 plot(hill, col=grey(0:100/100), legend=FALSE, main='Spain')
 plot(elevation, col=rainbow(25, alpha=0.35), add=TRUE)
 ```
-### Saving and exporting raster data 
+#### Saving and exporting raster data 
 ```{r}
 ## Saving raster to file:
 #writeRaster(tmin1, filename="tmin1.c.grd")   
@@ -367,7 +369,8 @@ states
 plot(states)
 ```
 ## <span style="color:#0040FF">AFTERNOON SESSION - Dan Warren</span>
-### Global Biodiversity Information Facility: Data aggregated from museums and other collections around the world. You need to create an account: http://www.gbif.org/<br>
+### GBIF<BR>
+<####<B>Global Biodiversity Information Facility: Data aggregated from museums and other collections around the world. You need to create an account: http://www.gbif.org/<br></B>
 We downloaded data for Iberolacerta occurences in 2006 in Spain & did some manipulations to make it in the proper format. You can alternatively do this in R with the rgbif function as below -- in this case, we do some data cleanup in R once loading the data.
 ```{r}
 library(rgbif)
@@ -471,7 +474,8 @@ rando.sp.points <- sampleOccurrences(rando.sp, 10, correct.by.suitability = T)
 plot(rando.sp$suitab.raster)
 points(rando.sp.points$sample.points[,1:2])
 ```
-### Simulate a response by customizing your own function, which can intake a predictor value and output a suitability value. This example makes one with a linear response and another with quadratic. Then pops it into the virtual species framework.
+### Custom Functions <br>
+Simulate a response by customizing your own function, which can intake a predictor value and output a suitability value. This example makes one with a linear response and another with quadratic. Then pops it into the virtual species framework.
 ```{r}
 linear = function(x, slope, int){
   return(x*slope+int) ## a basic linear equation

@@ -1,0 +1,648 @@
+---
+title: 'Ecological & Evolutionary Biogeography Day 4: Intro to Max Likelihood and Phylogenies in R'
+author: <a href = 'http://www.maiarkapur.wordpress.com'>Maia Kapur</a href>
+date: "1 Dec 2016 - Barcelona, Spain"
+output: 
+  html_notebook: 
+    toc: yes
+---
+## <span style="color:#0040FF"> MORNING SESSION - Nick Matzke</span>
+
+#### <a href = http://phylo.wikidot.com/transsci'> Click Here </a href> for Nick's Phylo Wiki page for this class - the code shown here is downloaded from both the Spatial Data and ML/Phylogenies exercises.<br>
+#### <a href = http://phylo.wikidot.com/2014-summer-research-experiences-sre-at-nimbios-for-undergra'> Click Here </a href> for the NIMBIOS code tutorial which we copied for this exercise. I have gone through and added in more notes based on his lecture and the code setup.<br>
+Reference: Matzke, Nicholas J.; Warren, Dan (2016). "Introduction to R, starting from scratch." Free to use/redistribute under: Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0) 
+
+### Goals for today
+1. Learn historical biogeography analyses. This involves working with phylogenies in R, an understanding of Maximum Likelihood (ML) & model comparision with thing like AIC.
+2. Bayesian approaches (not really covered today)
+<Br>
+This will involve an intro to R for phylogenies, a lecture about biogeography, then move on to working with BioGeoBEARS to work with more complex models in palaeogeography, including distance, traits, and more.
+### CHAPTER 5: MAKE YOUR OWN FUNCTIONS, AND DO MAXIMUM LIKELIHOOD
+The ML assumption is that priors don't matter; all that is taken to matter is data.
+```{r, message = F, warning = F}
+## R has many good functions, but it is easy to make your own!  In fact, this is necessary for some applications. Let's consider some coin-flip data.Here are 100 coin flips:
+
+coin_flips = c('H','T','H','T','H','H','T','H','H','H','T','H','H','T','T','T','T','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','T','T','T','H','T','T','T','H','T','T','T','H','H','H','T','T','H','H','H','T','H','H','H','T','T','H','H','H','H','H','H','H','T','T','H','H','H','H','T','T','H','H','H','T','T','H','H','H','H','H','H','T','T','T','H','H','H','H','H','H','T','H','T','H','H','T','T')
+
+## coin_flips
+```
+What is your guess at "P_heads", the probability of heads? What do you think the Maximum Likelihood (ML) estimate would be? In the case of binomial data, we actually have a formula to calculate the ML estimate. *Lots of data could potentially overwhelm a prior belief*. The idea that we can attain 7 heads out of 10 tosses would lead to a probability estimate of 70% (of obtaining heads).
+```{r, message = F, warning = F}
+# Find the heads
+heads_TF = (coin_flips == "H")
+# heads_TF
+
+# Find the tails
+tails_TF = (coin_flips == "T")
+# tails_TF
+
+## The sum function will count how many in your object headsTF, thus returning how many times the flip resulted in 'true' for HEADS
+numHeads = sum(heads_TF)
+# numHeads 
+
+numTails = sum(tails_TF)
+# numTails
+
+numTotal = length(coin_flips)
+# numTotal
+
+# Here's the formula:
+P_heads_ML_estimate = numHeads / numTotal
+P_heads_ML_estimate
+```
+Well, duh, that seems pretty obvious.  At least it would have been, if we weren't thinking of coins, where we have a strong prior belief that the coin is probably fair.<Br><Br>
+What does it mean to say that this is "maximum likelihood" estimate of P_heads? <Br><Br>
+"Likelihood", in statistics, means "the probability of the data under the model". A model is typiclaly an equation that confers likelihood on data. A simple model could be p(Heads) = 0.7. A fixed parameter is user-defined, and a free parameter is <b>esimated.</b> A complex model has a lot of free parameters.
+<br><br>
+This technical definition has some interesting consequences:<br>
+1. Data has likelihood, models do not. <Br>
+2. The likelihood of noise in my attic, under the model that gremlinss<Br>
+3. are having a party up there, is 1.<Br>
+Let's calculate the probability of the coin flip data under the hypothesis/model that P_heads is 0.5
+We'll be very inefficient, and use a for-loop, and if/else statements...
+```{r, message = F, warnings = F}
+## Loop through all 100 flips & Make a list of the probability of each datum
+P_heads_guess = 0.5 
+
+# Empty list of probabilities
+probs_list = rep(NA, times=length(coin_flips))
+# probs_list
+
+for (i in 1:length(coin_flips))
+    {
+    # Print an update - I hashed this out to save space
+    # cat("\nAnalysing coin flip #", i, "/", length(coin_flips), sep="")
+
+    # Get the current coin flip
+    coin_flip = coin_flips[i]
+
+    # If the coin flip is heads, give that datum
+    # probability P_heads_guess.
+    # If tails, give it (1-P_heads_guess)
+
+    if (coin_flip == "H")
+        {
+        probs_list[i] = P_heads_guess
+        } # End if heads
+
+    if (coin_flip == "T")        
+        {
+        probs_list[i] = (1-P_heads_guess)
+        } # End if tails
+    } # End for-loop
+
+# Look at the resulting probabilities
+probs_list[1:100]
+```
+```{r, message = F, warnings = F}
+# We get the probability of all the data by multiplying all the probabilities. This is the probability of the data given the model...but the probability of getting this sequence is quite small.
+likelihood_of_data_given_P_heads_guess1 = prod(probs_list)
+
+likelihood_of_data_given_P_heads_guess1
+```
+That's a pretty small number!  You'll see that it's just 0.5^100: 0.5^100<Br>
+A probability of 0.5 is not small, but multiply it 100 values of 0.5 together, and you get a small value. That's the probability of that specific sequence of heads/tails, given the hypothesis that the true probability is P_heads_guess.
+<Br><Br>
+Let's try another probability:
+```{r, message = F, warning = F}
+# Loop through all 100 flips & Make a list of the probability of each datum
+P_heads_guess = 0.7 ## clown coin
+
+# Empty list of probabilities
+probs_list = rep(NA, times=length(coin_flips))
+probs_list
+
+for (i in 1:length(coin_flips))
+    {
+    # Print an update
+    # cat("\nAnalysing coin flip #", i, "/", length(coin_flips), sep="")
+
+    # Get the current coin flip
+    coin_flip = coin_flips[i]
+
+    # If the coin flip is heads, give that datum
+    # probability P_heads_guess.
+    # If tails, give it (1-P_heads_guess)
+
+    if (coin_flip == "H")
+        {
+        probs_list[i] = P_heads_guess
+        } # End if heads
+
+    if (coin_flip == "T")        
+        {
+        probs_list[i] = (1-P_heads_guess)
+        } # End if tails
+    } # End for-loop
+
+# Look at the resulting probabilities
+probs_list[1:100]
+```
+```{r, message = F, warning = F}
+# We get the probability of all the data by multiplying all the probabilities
+likelihood_of_data_given_P_heads_guess2 = prod(probs_list)
+likelihood_of_data_given_P_heads_guess2
+```
+We got a different likelihood. It's also very small. But that's not important. What's important is,  how many times higher is it?
+```{r, message = F, warning = F}
+## this ithe ratio of the data likelihood under the first/second model -- we've increased the likelihood by 54x.
+likelihood_of_data_given_P_heads_guess2 / likelihood_of_data_given_P_heads_guess1
+```
+Whoa!  That's a lot higher!  This means the coin flip data is 54 times more probable under the hypothesis that P_heads=0.7 than under the hypothesis that P_heads=0.5.
+<br><Br>
+<b>Maximum likelihood: </b>You can see that the BEST explanation of the data would be the one with the value of P_heads that maximized the probability of the data.  This would be the Maximum Likelihood solution.<br><Br>
+<b>We could keep copying and pasting code, but that seems annoying.  Let's make a function instead:</b>
+```{r, message = F, warning = F}
+# Function that calculates the probability of coin flip data given a value of P_heads_guess
+calc_prob_coin_flip_data <- function(P_heads_guess, coin_flips)
+    {
+    # Empty list of probabilities
+    probs_list = rep(NA, times=length(coin_flips))
+    probs_list
+
+    for (i in 1:length(coin_flips))
+        {
+        # Print an update
+        #cat("\nAnalysing coin flip #", i, "/", length(coin_flips), sep="")
+
+        # Get the current coin flip
+        coin_flip = coin_flips[i]
+
+        # If the coin flip is heads, give that datum
+        # probability P_heads_guess.
+        # If tails, give it (1-P_heads_guess)
+
+        if (coin_flip == "H")
+            {
+            probs_list[i] = P_heads_guess
+            } # End if heads
+
+        if (coin_flip == "T")        
+            {
+            probs_list[i] = (1-P_heads_guess)
+            } # End if tails
+        } # End for-loop
+
+    # Look at the resulting probabilities
+    probs_list
+
+    # We get the probability of all the data by multiplying
+    # all the probabilities
+    likelihood_of_data_given_P_heads_guess = prod(probs_list)
+
+    # Return result
+    return(likelihood_of_data_given_P_heads_guess)
+    }
+
+# Now, we can just use this function, trying a few different values
+calc_prob_coin_flip_data(P_heads_guess=0.4, coin_flips=coin_flips)
+calc_prob_coin_flip_data(P_heads_guess=0.5, coin_flips=coin_flips)
+calc_prob_coin_flip_data(P_heads_guess=0.65, coin_flips=coin_flips) ## highest one
+calc_prob_coin_flip_data(P_heads_guess=0.7, coin_flips=coin_flips)
+calc_prob_coin_flip_data(P_heads_guess=0.71, coin_flips=coin_flips)
+calc_prob_coin_flip_data(P_heads_guess=0.9, coin_flips=coin_flips)
+
+```
+Look at that!  We did all of that work in a split-second. In fact, we can make another for-loop, and search for the ML value of P_heads by trying all of the values and plotting them.
+```{r, message = F, warning = F}
+# Sequence of 50 possible values of P_heads between 0 and 1
+P_heads_values_to_try = seq(from=0, to=1, length.out=50)
+likelihoods = rep(NA, times=length(P_heads_values_to_try))
+
+for (i in 1:length(P_heads_values_to_try))
+    {
+    # Get the current guess at P_heads_guess
+    P_heads_guess = P_heads_values_to_try[i]
+
+    # Calculate likelihood of the coin flip data under
+    # this value of P_heads
+    likelihood = calc_prob_coin_flip_data(P_heads_guess=P_heads_guess, coin_flips=coin_flips)
+
+    # Store the likelihood value
+    likelihoods[i] = likelihood
+    } # End for-loop
+
+# Here are the resulting likelihoods:
+likelihoods[1:10]
+
+# Let's try plotting the likelihoods to see if there's a peak. I added in a vertical line at 0.65.
+plot(x=P_heads_values_to_try, y=likelihoods)
+lines(x=P_heads_values_to_try, y=likelihoods)
+abline(v =  0.65, col = 'red', lwd = 3, lty = 3)
+```
+Whoa! That's quite a peak!  You can see that the likelihoods vary over several orders of magnitude. Partially because of this extreme variation, we often use the log-likelihood (natural log, here) instead of the raw likelihood. (Other reasons: machines have a minimum precision, log-likelihoods can be added instead of multiplied, AIC is calculated from log-likelihood, etc.)<br><Br>
+This strategy basically tries a bunch of different values and sees which one provides the maximum likelihood. You'll notice that in these cases, the mean is posited as an estimate of the ML; where the derivative of the likelihood function = 0.
+```{r, message = F, warning = F, fig.height = 6, fig.width = 4}
+## makes negative values into tiny values
+# log_likelihoods = log(likelihoods, base=exp(1))
+# plot(x=P_heads_values_to_try, y=log_likelihoods)
+# lines(x=P_heads_values_to_try, y=log_likelihoods)
+
+# Let's plot these together. The MFROW shows how you can plot them next to eachother.
+par(mfrow=c(2,1))
+plot(x=P_heads_values_to_try, y=likelihoods, main="Likelihood (L) of the data")
+lines(x=P_heads_values_to_try, y=likelihoods)
+abline(v =  0.65, col = 'red', lwd = 3, lty = 3)
+
+plot(x=P_heads_values_to_try, y=log_likelihoods, main="Log-likelihood (LnL) of the data")
+lines(x=P_heads_values_to_try, y=log_likelihoods)
+abline(v =  0.65, col = 'red', lwd = 3, lty = 3)
+par(mfrow=c(1,1))
+```
+### Maximum likelihood optimization
+You can see that the maximum likelihood of the data occurs when P_heads is somewhere around 0.6 or 0.7. What is it exactly? We could just keep trying more values until we find whatever precision we desire.  But, R has a function for maximum likelihood optimization! It's called optim().  Optim() takes a function as an input. Fortunately, we've already written a function!
+<br><br>
+Let's modify our function a bit to return the log-likelihood, and print the result:
+```{r, message = F, warning = F}
+## Function that calculates the probability of coin flip data given a value of P_heads_guess. This returns the LOG likelihood.
+
+calc_prob_coin_flip_data2 <- function(P_heads_guess, coin_flips)
+    {
+    # Empty list of probabilities
+    probs_list = rep(NA, times=length(coin_flips))
+    probs_list
+
+    for (i in 1:length(coin_flips))
+        {
+        # Print an update
+        #cat("\nAnalysing coin flip #", i, "/", length(coin_flips), sep="")
+
+        # Get the current coin flip
+        coin_flip = coin_flips[i]
+
+        # If the coin flip is heads, give that datum
+        # probability P_heads_guess.
+        # If tails, give it (1-P_heads_guess)
+
+        if (coin_flip == "H")
+            {
+            probs_list[i] = P_heads_guess
+            } # End if heads
+
+        if (coin_flip == "T")        
+            {
+            probs_list[i] = (1-P_heads_guess)
+            } # End if tails
+        } # End for-loop
+
+    # Look at the resulting probabilities
+    # probs_list
+
+    # We get the probability of all the data by multiplying
+    # all the probabilities
+    likelihood_of_data_given_P_heads_guess = prod(probs_list)
+
+    # Get the log-likelihood
+    LnL = log(likelihood_of_data_given_P_heads_guess)
+    # LnL
+
+    # Error correction: if -Inf, reset to a low value
+    if (is.finite(LnL) == FALSE)
+        {
+        LnL = -1000
+        }
+
+    # Print some output
+    # print_txt = paste("\nWhen P_heads=", P_heads_guess, ", LnL=", LnL, sep="")
+    # cat(print_txt)
+
+    # Return result
+    return(LnL)
+    }
+```
+```{r, message = F, warning = F}
+# Try the function out:
+LnL = calc_prob_coin_flip_data2(P_heads_guess=0.1, coin_flips=coin_flips)
+LnL = calc_prob_coin_flip_data2(P_heads_guess=0.2, coin_flips=coin_flips)
+LnL = calc_prob_coin_flip_data2(P_heads_guess=0.3, coin_flips=coin_flips)
+
+# Looks like it works!  Let's use optim() to search for the best P_heads value:
+
+# Set a starting value of P_heads
+starting_value = 0.1
+
+# Set the limits of the search
+limit_bottom = 0
+limit_top = 1
+
+## Optim is an MLE algorith, which will crawl through parameter space (hill-climbing) to id when it is at the maximum of your curve, based on what you designated above.
+optim_result = optim(par=starting_value, 
+                     fn=calc_prob_coin_flip_data2, 
+                     coin_flips=coin_flips, method="L-BFGS-B", 
+                     lower=limit_bottom, 
+                     upper=limit_top, control=list(fnscale=-1))
+
+# You can see the search print out as it proceeds.
+```
+Let's see what ML search decided on:
+```{r, message = F, warning = F}
+optim_result
+```
+Let's compare the LnL from ML search, with the binomial mean
+```{r, message = F, warning = F}
+optim_result$par
+```
+```{r}
+# Here's the formula:
+P_heads_ML_estimate = numHeads / numTotal
+P_heads_ML_estimate
+```
+Wow!  Pretty good! But -- why would anyone ever go through all the rigamarole, when they could just calculate P_head directly? Well, only in simple cases do we have a formula for the maximum likelihood estimation of the mean.  The optim() strategy works whether or not there is a simple formula. In real life science, ML optimization gets use A LOT, but most scientists don't learn it until graduate school, if then.
+<br><br>
+For a real-life example of ML analysis, try the tutorial for my biogeography R package, BioGeoBEARS:
+<b> http://phylo.wikidot.com/biogeobears#toc16 </b>
+<Br>
+<B> http://phylo.wdfiles.com/local--files/transsci/Matzke_2016_likelihood_tutorial_draft_text.pdf </b> An MLE tutorial hosted on Nick's site.
+
+#### Note on Bayesian Methods
+By the way, having done this ML search, we are very close to being able to do a Bayesian MCMC (Markov-Chain, Monte-Carlo) analysis.  However, we don't have time for this today.  Come talk to me this summer if you are interested!
+<Br><Br>
+
+### Phylogenies in R using APE
+Paradis's book on APE is linked from the course website:
+http://ib.berkeley.edu/courses/ib200b/IB200B_SyllabusHandouts.shtml
+
+```{r, warning = F, message = F, fig.height=4,fig.width=6}
+# install.packages("ape") ## (This should install some other needed packages also)
+library(ape)
+# This is what a Newick string looks like:
+newick_str = "(((Humans, Chimps), Gorillas), Orangs);"
+tr = read.tree(text=newick_str)
+plot(tr)
+tr ## note that it indicates no branch lengths.
+```
+What is the data class of "tr"?
+```{r, warning = F, message = F, eval = F}
+class(tr)
+```
+Is there any difference in the graphic produced by these two commands?
+```{r, warning = F, message = F, eval = F}
+par(mfrow = c(1,2))
+## I addded in plot titles and shrunk the title size with cex.main
+plot(tr, main = 'without branch lengths', cex.main = .75)
+plot.phylo(tr, main = 'without branch lengths', cex.main = .75)
+par(mfrow = c(1,1))
+```
+What is the difference in the result of these two help commands?
+```{r, warning = F, message = F, eval = F}
+?plot
+?plot.phylo
+```
+What are we adding to the tree and the plot of the tree, this time?
+```{r, warning = F, message = F}
+newick_str = "(((Humans:6.0, Chimps:6.0):1.0, Gorillas:7.0):1.0, Orangs:8.0)LCA_w_Orangs:1.0;" ## we're adding abranch lengths in millions of years beneath each branch. You should never but spaces in any names
+tr = read.tree(text=newick_str)
+plot(tr, main = 'with branch lengths', show.node.label = T)
+```
+What are we adding to the tree and the plot of the tree, this time?
+```{r, warning = F, message = F}
+newick_str = "(((Humans:6.0, Chimps:6.0)LCA_humans_chimps:1.0, Gorillas:7.0)LCA_w_gorillas:1.0, Orangs:8.0)LCA_w_orangs:1.0;"
+tr = read.tree(text=newick_str)
+plot(tr, show.node.label=TRUE)
+```
+More on Newick format, which, annoyingly, is sometimes inconsistent: http://en.wikipedia.org/wiki/Newick_format
+<Br>
+Have a look at how the tree is stored in R.<br><b>The edge matrix part is showing the list of node numbers, with the first X numbers showing the first X tip nodes, where X is the # of species; the next nodes are internal nodes. Each branch has an ancestor and descendant node. The edge length is in the same order of the edge matrix, and indicates the length of each branch in million years. </b>
+```{r, warning = F, message = F, eval = F}
+tr
+tr$tip.label
+tr$edge 
+tr$edge.length
+tr$node.label
+
+## If you forget how to find these, you can use the "attributes" function
+attributes(tr)
+```
+Now plot the tree in different ways:
+# (CTRL-right or CTRL-left to flip between the trees in the graphics window)
+```{r, warning = F, message = F, fig.height = 12, fig.wid = 12}
+par(mfrow = c(4,4))
+plot(tr, type="phylogram", direction="rightwards")
+plot(tr, type="phylogram", direction="leftwards")
+plot(tr, type="phylogram", direction="upwards")
+plot(tr, type="phylogram", direction="downwards")
+
+plot(tr, type="cladogram")
+plot(tr, type="fan")
+plot(tr, type="unrooted")
+plot(tr, type="radial")
+
+## unrooted trees are handy if you dont know where the root is -- eg just a molecular phylogeny
+plot(tr, type="unrooted", edge.width=5)
+plot(tr, type="unrooted", edge.width=5, edge.color="blue")
+plot(tr, type="unrooted", edge.width=5, edge.color="blue", lab4ut="horizontal")
+plot(tr, type="unrooted", edge.width=5, edge.color="blue", lab4ut="axial")
+par(mfrow = c(1,1))
+```
+In R GUI, you can save any displayed tree to PDF, or do a screen capture etc. You can also save a tree to PDF as follows: (you won't see the plots, they'll just show up as PDFs in your working directory.)
+```{r, warning = F, message = F, eval = F}
+pdffn = "homstree.pdf"
+pdf(file=pdffn)
+plot(tr, type="unrooted", edge.width=5, edge.color="blue", lab4ut="axial")
+dev.off()
+
+# In Macs (and maybe PCs), this will open the PDF from R:
+cmdstr = paste("open ", pdffn, sep="")
+system(cmdstr)
+
+# How to save the tree as text files
+# give ithe file name, and specify the output file
+newick_fn = "homstree.newick"
+write.tree(tr, file=newick_fn)
+
+#
+nexus_fn = "homstree.nexus"
+write.nexus(tr, file=nexus_fn)
+## you need biogeobears for this command
+library(BioGeoBEARS)
+moref(nexus_fn)
+```
+To conclude the lab, I wanted to find, download, and display
+a "tree of life". To do this, I went to the TreeBase search page: http://www.treebase.org/treebase-web/search/studySearch.html and searched on studies with the title "tree of life"
+<Br> Annoyingly, the fairly famous tree from: Ciccarelli F.D. et al. (2006). "Toward automatic reconstruction of a highly resolved tree of life." Science, 311:1283-1287. http://www.sciencemag.org/content/311/5765/1283.abstract
+...was not online, as far as I could tell.  And a lot of these are the "turtle trees of life", etc. Lame.  But this one was a tree covering the root of known cellular life.
+<Br> Caetano-Anolles G. et al. (2002). "Evolved RNA secondary structure and the rooting of the universal tree of life." Journal of Molecular Evolution. Check S796 for this study, then click over to the "Trees" tab to get the tree...http://www.phylowidget.org/full/?tree=%27http://www.treebase.org/treebase-web/tree_for_phylowidget/TB2:Tr3931%27 Or, download the tree from our website, here: http://ib.berkeley.edu/courses/ib200b/labs/Caetano-anolles_2002_JME_ToL.newick
+```{r, warning = F, message = F, fig.height = 4, fig.width = 6}
+# load the tree and play with it:
+newick_fn = "Caetano-anolles_2002_JME_ToL.newick"
+tree_of_life = read.tree(newick_fn)
+par(mfrow = c(1,3))
+plot(tree_of_life, type="cladogram")
+plot(tree_of_life, type="phylogram")
+plot(tree_of_life, type="unrooted", lab4ut="axial")
+par(mfrow = c(1,1))
+```
+Aw, no branch lengths in TreeBase! Topology only! Lame!
+*We didn't cover material after this point, but you can find it on the transsci section of the phylowiki website.*<Br>
+
+### BioGeoBears
+We worked with code from http://phylo.wikidot.com/biogeobears#script. 
+All scripts are copyright Nicholas J. Matzke, please cite if you use. License: GPL-3 http://cran.r-project.org/web/licenses/GPL-3
+<Br>
+I am happy to answer questions at matzke@nimbios.org, but I am more happy to answer questions on the BioGeoBEARS google group
+##### The package is designed for ML and Bayesian inference
+of <br>
+(a) ancestral geographic ranges, and 
+<Br>
+(b) perhaps more importantly, models for the  evolution of geographic range across a phylogeny.
+<br>
+The example below implements and compares:
+<Br>
+(1) The standard 2-parameter DEC model implemented in  the program LAGRANGE (Ree & Smith 2008); users will notice that the ML parameter inference and log-likelihoods are identical
+<Br>
+(2) A DEC+J model implemented in BioGeoBEARS, wherein a third parameter, j, is added, representing the  relative per-event weight of founder-event / jump speciation events at cladogenesis events.  The higher j is, the more probability these events have, and the less probability the standard LAGRANGE cladogenesis events have.
+<Br>
+(3) Some standard model-testing (LRT and AIC) is implemented at the end so that users may compare models
+<Br>
+(4) The script does similar tests of a DIVA-like model (Ronquist 1997)and a BAYAREA-like model (Landis, Matzke, Moore, & Huelsenbeck, 2013)
+<br>
+<B>Setup:</b>
+```{r, warning = F, message = F}
+# Load the package (after installation, see above).
+library(optimx)       # You need to have some version of optimx available  as it is a BioGeoBEARS dependency; however, if you don't want to use optimx, and use optim() (from R core) you can set: BioGeoBEARS_run_object$use_optimx = FALSE ...everything should work either way -- NJM 2014-01-08
+library(FD) # for FD::maxent() (make sure this is up-to-date)
+library(snow)  # (if you want to use multicore functionality; some systems/R versions prefer library(parallel), try either)
+library(parallel)
+library(roxygen2)
+```
+<span style="color:#B4045F">
+TO GET THE OPTIMX/OPTIM FIX, AND THE UPPASS FIX, SOURCE THE REVISED FUNCTIONS WITH THESE COMMANDS.
+<Br>
+<b> CRUCIAL CRUCIAL CRUCIAL: </b><Br> YOU HAVE TO RUN THE SOURCE COMMANDS AFTER *EVERY TIME* YOU DO library(BioGeoBEARS). THE CHANGES ARE NOT "PERMANENT", THEY HAVE TO BE MADE EACH TIME.  IF YOU ARE GOING TO BE OFFLINE, YOU CAN DOWNLOAD EACH .R FILE TO YOUR HARD DRIVE AND REFER THE source() COMMANDS TO THE FULL PATH AND FILENAME OF EACH FILE ON YOUR LOCAL SYSTEM INSTEAD.</span>
+```{r, warning = F, message = F}
+library(BioGeoBEARS)
+source("http://phylo.wdfiles.com/local--files/biogeobears/cladoRcpp.R") # (needed now that traits model added; source FIRST!)
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_add_fossils_randomly_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_basics_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_calc_transition_matrices_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_classes_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_detection_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_DNA_cladogenesis_sim_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_extract_Qmat_COOmat_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_generics_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_models_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_on_multiple_trees_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_plots_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_readwrite_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_simulate_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_SSEsim_makePlots_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_SSEsim_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_stochastic_mapping_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_stratified_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_univ_model_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/calc_uppass_probs_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/calc_loglike_sp_v01.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/get_stratified_subbranch_top_downpass_likelihoods_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/runBSM_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/stochastic_map_given_inputs.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/summarize_BSM_tables_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_traits_v1.R") # added traits model
+
+```
+```{r, warning = F, message = F}
+calc_loglike_sp = compiler::cmpfun(calc_loglike_sp_prebyte)    # crucial to fix bug in uppass calculations
+calc_independent_likelihoods_on_each_branch = compiler::cmpfun(calc_independent_likelihoods_on_each_branch_prebyte) # slight speedup hopefully
+```
+Local source()-ing method -- uses BioGeoBEARS sourceall() function on a directory of .R files, so you don't have to type them out.The directories here are on my machine, you would have to make a directory, save the .R files there, and refer to them.
+<Br>
+It's best to source the "cladoRcpp.R" update first, to avoid warnings like this: Note: possible error in 'rcpp_calc_anclikes_sp_COOweights_faster(Rcpp_leftprobs = tmpca_1, ': unused arguments (m = m, m_null_range = include_null_range, jts_matrix = jts_matrix) 
+<br>
+TO USE: Delete or comment out the 'source("http://...")' commands above, and un-comment the below...
+```{r, warning = F, message = F}
+# Un-comment (and fix directory paths) to use:
+#library(BioGeoBEARS)
+#source("/drives/Dropbox/_njm/__packages/cladoRcpp_setup/cladoRcpp.R")
+#sourceall("/drives/Dropbox/_njm/__packages/BioGeoBEARS_setup/")
+#calc_loglike_sp = compiler::cmpfun(calc_loglike_sp_prebyte)    # crucial to fix bug in uppass calculations
+#calc_independent_likelihoods_on_each_branch = compiler::cmpfun(calc_independent_likelihoods_on_each_branch_prebyte)
+```
+You will need to set your working directory to match your local system
+```{r, warning = F, message = F, eval = F}
+# Note these very handy functions!
+# Command "setwd(x)" sets your working directory
+# Command "getwd()" gets your working directory and tells you what it is.
+# Command "list.files()" lists the files in your working directory
+# To get help on any command, use "?".  E.g., "?list.files"
+
+# Set your working directory for output files
+# default here is your home directory ("~")
+# Change this as you like
+wd = np("~")
+setwd(wd)
+
+# Double-check your working directory with getwd()
+getwd()
+```
+Setup Extension Data Directory
+```{r, warning = F, message = F}
+# When R packages contain extra files, they are stored in the "extdata" directory inside the installed package. BioGeoBEARS contains various example files and scripts in its extdata directory. Each computer operating system might install BioGeoBEARS in a different place, depending on your OS and settings. However, you can find the extdata directory like this:
+extdata_dir = np(system.file("extdata", package="BioGeoBEARS"))
+extdata_dir
+list.files(extdata_dir)
+
+# "system.file" looks in the directory of a specified package (in this case BioGeoBEARS)
+# The function "np" is just a shortcut for normalizePath(), which converts the 
+# path to the format appropriate for your system (e.g., Mac/Linux use "/", but 
+# Windows uses "\\", if memory serves).
+
+# Even when using your own data files, you should KEEP these commands in your 
+# script, since the plot_BioGeoBEARS_results function needs a script from the 
+# extdata directory to calculate the positions of "corners" on the plot. This cannot
+# be made into a straight up BioGeoBEARS function because it uses C routines 
+# from the package APE which do not pass R CMD check for some reason.
+```
+<b>SETUP: YOUR TREE FILE AND GEOGRAPHY FILE</b>
+Example files are given below. To run your own data, make the below lines point to your own files, e.g.
+```{r, warning = F, message = F}
+# trfn = "/mydata/frogs/frogBGB/tree.newick"
+# geogfn = "/mydata/frogs/frogBGB/geog.data"
+```
+<B>Phylogeny file <Br></b>
+Notes: <Br>
+1. Must be binary/bifurcating: no polytomies <Br>
+2. No negative branchlengths (e.g. BEAST MCC consensus trees sometimes have negative branchlengths) <Br>
+3. Be careful of very short branches, as BioGeoBEARS will interpret ultrashort branches as direct ancestors <Br>
+4. You can use non-ultrametric trees, but BioGeoBEARS will interpret any tips significantly below the top of the tree as fossils!  This is only a good idea if you actually do have fossils in your tree, as in e.g. Wood, Matzke et al. (2013), Systematic Biology. <Br>
+5. The default settings of BioGeoBEARS make sense for trees where the branchlengths are in units of millions of years, and the tree is 1-1000 units tall. If you have a tree with a total height of e.g. 0.00001, you will need to adjust e.g. the max values of d and e, or (simpler) multiply all your branchlengths to get them into reasonable units.<Br>
+6. DON'T USE SPACES IN SPECIES NAMES, USE E.G. "_"
+```{r, warning = F, message = F}
+# This is the example Newick file for Hawaiian Psychotria
+# (from Ree & Smith 2008)
+# "trfn" = "tree file name"
+trfn = np(paste(addslash(extdata_dir), "Psychotria_5.2.newick", sep=""))
+
+# Look at the raw Newick file:
+moref(trfn)
+
+# Look at your phylogeny:
+tr = read.tree(trfn)
+tr
+plot(tr)
+title("Example Psychotria phylogeny from Ree & Smith (2008)")
+axisPhylo() # plots timescale
+```
+<b>Geography file<br></b>
+Notes: <br>
+1. This is a PHLYIP-formatted file. This means that in the first line, 
+<br>   - the 1st number equals the number of rows (species)
+<br>   - the 2nd number equals the number of columns (number of areas)
+<br>2. This is the same format used for C++ LAGRANGE geography files.
+<br>3. All names in the geography file must match names in the phylogeny file.
+<br>4. DON'T USE SPACES IN SPECIES NAMES, USE E.G. "_"
+<br>5. Operational taxonomic units (OTUs) should ideally be phylogenetic lineages, i.e. genetically isolated populations.  These may or may not be identical with species.  You would NOT want to just use specimens, as each specimen automatically can only live in 1 area, which will typically favor DEC+J models.  This is fine if the species/lineages really do live in single areas, but you wouldn't want to assume this without thinking about it at least. In summary, you should collapse multiple specimens into species/lineages if data indicates they are the same genetic population.
+<br><br><b> <span style="color:#B4045F">The code for the Hawaii example is huge and the rest can be found online: http://phylo.wikidot.com/biogeobears#script </span>
+
+
+### <b>Nick's lecture on Biogeography</b></b>
+In an MLE analysis, you get one summary history with the highest probability.<Br>
+<b> A short, biased history of biogeography</b>: Previous science had a biblical framework, which was updated later on in the context of taxonomic patterns, but at first it was considered as a "different creater for each continent". Instead of land bridges, the Pangea hypothesis was perfectly appealing to explain (deterministically) the cause for observed distributions. BUT plate tectonics might not be the most right explanation - especially for young, widespread distributions.<Br><br>
+<b>Historical Biogeography Methods</b> <Br> 
+1. Biogeo as standard character <Br>
+2. Diva (dispersal vicariance analysis - parsimony)  <Br> 
+3. Lagrange-Dispersal Extinction Cladogenesis <Br> 
+4. RASP BBM Bayesian Binary Model, also does diva DEC <Br> 
+5. BayArea (Bayesian) <Br> <Br>
+So back in the day you'd just run a bunch of different programs and get kindof different answers. <span style="color:#B4045F">See slides for how to line up different assumptions of each model.</span>
+
+
+

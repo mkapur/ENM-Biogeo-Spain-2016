@@ -3,12 +3,16 @@ title: "Ecological & Evolutionary Biogeography Day 1: Intro to R"
 instructor: Dan Warren - Macquarie Univeristy
 author: <a href = 'http://www.maiarkapur.wordpress.com'>Maia Kapur</a href>
 date: 28 Nov 2016 - Barcelona, Spain
-output: html_notebook
+output: 
+  html_notebook:
+    toc: yes
 ---
 
 
 ## PART I: R STUDIO TOUR<Br>
 #### <a href = 'https://drive.google.com/file/d/0B0goXsJkrNrGOXFpbDA4TjM3X2c/view?usp=sharing'>Click here to check out Lasting Data Analysis (pdf)</a href> - a short guide to good data management and coding practices.
+<a href = 'http://phylo.wikidot.com/transsci#toc0'>Here's a link</a href> to Nick Matzke's R tutorial (it's buried within the Intro to ML/Phylogenies) online. He was supposed to teach this course but missed his flight.
+
 #### Functions - just a brief overview here. See Part IV for writing functions.
 ```{r}
 ## A function is a little machine. The input goes in parentheses:

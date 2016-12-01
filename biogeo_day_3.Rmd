@@ -1,0 +1,459 @@
+---
+title: 'Ecological & Evolutionary Biogeography Day 3: Intro to ENM/SDM Concepts & Working with ENMTools'
+author: <a href = 'http://www.maiarkapur.wordpress.com'>Maia Kapur</a href>
+date: "30 Nov 2016 - Barcelona, Spain"
+output: 
+  html_notebook: 
+    toc: yes
+---
+##<span style="color:#0040FF"> MORNING SESSION - Dan Warren</span>
+
+### *Ecological Niche Modeling == Species Distribution Modeling*. "Create something useful with the data we can get."<Br></b>
+#### <a href = https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf'> Haz clic aqui </a href> for the SDM Vignette (tutorial) in dismo from CRAN.<br>
+These are methods for working with species occurrences and environmental factors (both with a spatial component). We use point data to extract environmental conditions where we've observed species; and we create a model to describe the probability of observing that species giving those conditions. The result is an estimate of the species' niche in the form of a mathematical model. We then use that model to project/predict the species' distribution (as a function of habitat suitability) across a geographic range. They're not ideal for establishing tolerance extremes.<Br><br>
+<b>Advantages:<br></b>
+  1. large availability of data <br>
+  2. models quick to build <br>
+  3. results easy to apply to region or questions<br>
+  <b><Br>
+Disadvantages:<br></b>
+  1. Might be 'mostly crap' due to the low quality of the data. <br>
+  2. We're limited by dispersal limitation and limitation of climate space actually available to explore. <br>
+  3. This is the main struggle in the literature. <br>
+A BAM diagram is like a Venn diagram of Biotic-Abiotic-Mobility niches.<br>
+
+### Build a Quick SDM! - Using bioclim() and domain()
+```{r, warning = F, message = F, eval = F}
+## Unhash this section to search online for I. monticola, put it in a dataframe and extract just columns species, lat and long. Then drop all duplicates and those with NAs using the complete.cases functions. We also changed the column names to be easier to read. At the end of this bit, I write it to a CSV called 'ibm' that is just sitting in my working directory and load it again -- this avoids having to re-download from the internet every time.
+
+library(dismo)
+library(rgeos)
+library(rgbif)
+
+## Replicating the retrieval of Iberolacerta monticola dataframe from Day 2
+## get the data using function occ_search
+# ibl = gbif("Iberolacerta monticola")
+
+# str(ibl) ## what you want is within ibl$data
+
+# ibl = as.data.frame(ibl$data)
+
+## Shrink it down to columns of interest (IDs, lat & long)
+
+# keeps = c('species','lat','lon')
+# ibl.small = ibl[,keeps]
+## rename the columns to be shorter
+# colnames(ibl.small) <- c('species','lat','lon')
+
+## drop NAs using the complete.cases() function, which will return TRUE or FALSE for those that have values in each column. Using square bracket indexes helps us ask for rows of ibl.small for which complete.cases() returns TRUE; leaving the part after the comma empty means we want all rows.
+# ibl.small = ibl.small[complete.cases(ibl.small),]
+# ## take out only unique observations
+# ibm <- as.data.frame(unique(ibl.small))
+# write.csv(ibm, paste0(getwd(),'/ibm.csv', row.names = F))
+```
+Here's where I load it from my local directory after saving it in the line above:
+```{r, warning = F, message = F}
+ibm = read.csv('ibm.csv')
+ibm <- ibm[,2:4]
+head(ibm)
+```
+Re-download biotic worldclim data & crop it to the degrees extent of Spain using known numbers.
+```{r, warning = F, message = F}
+library(rgdal)
+all.worldclim <- raster::getData("worldclim", res = 10, var = 'bio')
+spain.worldclim <- crop(all.worldclim, extent(-10,4,35,45))
+
+## set up the bounding box of your map
+ibm.extent <- extent(min(ibm$lon -1),
+                     max(ibm$lon + 1),
+                     min(ibm$lat - 1),
+                     max(ibm$lat + 1))
+```
+Map it!
+```{r, warning = F, message = F}
+ibm.map = gmap(ibm.extent, type = 'satellite', latlon = TRUE)
+## in this next line, we are adding in the points of the observations and transforming them using the Mercator function. Yesterday we colored it in by column 1 (species) as a factor using the code col = as.factor(ibm[,1]) -- this will still make them all black this time because we only have one species. Here I've changed it to red for easier viewing.
+plot(ibm.map)
+points(Mercator(ibm[,c('lon','lat')]), pch = 16, col = 'red')
+```
+#### Build the model using <span style="color:#7401DF">BioClim</span> - one of the oldest methods. This gives you confidence itnervals around the habitat your species occupies, and the most central space is assigned the highest-quality habitat. It's fast!
+```{r, warning = F, message = F}
+## Use the bioclim function, which takes your climate layers and the long and lat columns (in that order)
+ibm.bc <- bioclim(spain.worldclim, ibm[,c('lon','lat')])
+```
+Plot responses. The par() argument makes it show up in a grid. Each response functino is showing the expected suitability along a gradient of that specific predictor -- also known as the "partial suitability function". In general, this is like looking at one side of a 19-dimensional box for which each dimension is a given predictor variable.
+```{r, fig.height = 7, fig.width = 7, warning = F, message = F}
+par(mfrow = c(4,4))
+response(ibm.bc)
+par(mfrow = c(1,1))
+```
+Now we can inspect what's in the object:
+```{r, warning = F, message = F}
+# attributes(ibm.bc) ## Tells you what values are at each point, mins, etc
+```
+And make a pretty map using predict() on our worldclim data. The model is a mathematical estimate in environmental space, the prediction is *not* a model in itself, but a geographic estimation. The color bar is Suitability.
+```{r, warning = F, message = F, warning = F, message = F, fig.height=7,fig.width=6}
+ibm.bc.pred <- predict(object = ibm.bc, spain.worldclim)
+plot(ibm.bc.pred, main = 'sdm predictions using bioclim')
+## add in the same points from above. cex makes the points smaller.
+points(ibm[,c('lon','lat')], pch = 16, cex = 0.25)
+```
+#### There is an alternative to bioclim called <span style="color:#7401DF">domain()</span> that does a similar process. Repeat the above steps to make a model and plot it using domain. These are both profile methods, that only require presence data.
+```{r, fig.height = 7, fig.width = 7, warning = F, message = F}
+ibm.d <- bioclim(spain.worldclim, ibm[,c('lon','lat')])
+par(mfrow = c(4,4))
+response(ibm.d)
+par(mfrow = c(1,1))
+```
+```{r, fig.height = 7, fig.width = 7, warning = F, message = F}
+ibm.d.pred <- predict(object = ibm.d, spain.worldclim)
+plot(ibm.d.pred, main = 'sdm predictions using domain()')
+## add in the same points from above. cex makes the points smaller.
+points(ibm[,c('lon','lat')], pch = 16, cex = 0.25)
+```
+Now, we dont' typically evaluate the model based on this full prediction. We normally take out maybe 80% of the modeled datapoints and then use that to test how well the model predicts 20% that were left out from the model construction. More on this later...<Br><Br>
+There are many methods that compare presence *and* absence data -- indicates what species is selected from available habitat. This has some risks because not seeing them there doesn't necessarily mean that the species is not there. So good luck. The logic is that we're trying to control for the availablity of habitat -- because spp could be concentrated in a habitat patch just because that's what is available, not that it's environmentally ideal. This is done be estimating what they LIKE in add'n to where they actually ARE.<Br><Br>
+Where could our species go, but haven't yet? How do we estimate this? We can make an assumption that for any point observed, there is a 50km buffer aruond that point where it *could* be.
+```{r}
+## the units in the circe() function are in meters, lonlat indicates that there is no projection here.
+buffer <- circles(ibm[,c('lon','lat')], d = 100000, lonlat = TRUE)
+plot(ibm.d.pred, main = 'sdm predictions using domain()')
+## add in the same points from above. cex makes the points smaller.
+points(ibm[,c('lon','lat')], pch = 16, cex = 0.25)
+plot(buffer, add = T)
+```
+The next steps combine the circles we created in to a single shape (polygon) & turn it into a raster. This gets rid of the part of the circles that don't overlap with the raster of environmental data. Then we randomly choose 1000 datapoints within there.
+```{r}
+## merge circles together
+pol = gUnaryUnion(buffer@polygons) 
+
+## make a raster that is the intersection of our circles and the cilmate layers. A raster representing the areas within the climate raster that are accessible by our species (assuming the 100km boundary)
+buffer.raster <- mask(spain.worldclim[[1]], pol) 
+
+## this is just showing average temperature (one of the worldclim layers -- doesn't really matter, this just shows you what it looks like)
+plot(buffer.raster) 
+
+ ## this takes random points from the buffer raster and gives you 1000 data points in a data frame and the value for that parameter in the raster.
+background <- sampleRandom(buffer.raster, size = 1000, xy = T)
+
+## these are your 1000 random points. You can ignore the 3rd column.
+head(background) 
+```
+Create a dataframe called ibm.pres that has your long and lat (in that order) for your species presences, but NO species name.
+```{r}
+ibm.pres <- ibm[,c('lon','lat')]
+head(ibm.pres, n = 3)
+```
+Then make a dataframe called ibm.bg that has long and lat in that order, from the background dataframe.
+```{r}
+## keep in mind that the X column is your longitude, y is lat. We also rename these columns.
+ibm.bg <- data.frame(background[,1:2])
+## the names() and colnames() functions are the same
+names(ibm.bg) <- c('lon','lat')
+head(ibm.bg, n = 3)
+```
+The background theoretically represents the available habitat based on your assumption of 100km mobility.
+```{r, fig.width=6,fig.height=5}
+## this just plots the background points (in red) below our observations. Ignore the color bar.
+plot(ibm.bc.pred)
+points(ibm.bg, pch = 4, col = 'red')
+points(ibm.pres, pch = 16, cex = 0.5, col = 'black')
+```
+The evaluate() function in dismo asks what score does the model give the presence and absence points, and builds a bunch of metrics as to how well your pre-created model (ibm.bc) predicts things. The imb.bg object is serving as a pseudo-absence (basically).
+Check Raes & terSteege (2007) about picking a good background area.
+```{r}
+## This is an S4 object and therefore you need @ to get things out of it, like AUC, kappa (how well it predicts presence vs background)
+ibm.bc.eval = evaluate(p = ibm.pres, 
+                       a = ibm.bg, 
+                       model = ibm.bc, 
+                       x = spain.worldclim)
+```
+The AUC metric indicates what you expect by chance on average -- based on a random raster null model (uninformative model).
+Here's a quick way to load in your raster files:
+```{r, warning = F, eval = F}
+## change this to your own directory
+my.files <- list.files("~/GitHub/Barcelona-Class-2016/Outlines/spain/",
+                       pattern = ".asc", full.names = TRUE)
+# spain.2 <- stack(my.files)
+```
+Plot various features of the bioclim model. This plot depics false vs true positive rate. These are all plots of our training data (how well we predicted the data that went into our model.)
+```{r, fig.height = 4, fig.width = 8}
+## The line is the "Random prediction", and it being over the curve is good.
+par(mfrow = c (1,3))
+plot(ibm.bc.eval, 'ROC')
+
+## indicates true positive rate vs threshold. If we were to convert cointinuous suitability scores to pure presence and absence; if the threshold is zero, than any score of suitability >0 means 100% presence predicted. This plot is indicating that if the threshold increases, we predict fewer grid cells as present. This goes up, and we may end up throwing away true positives.
+plot(ibm.bc.eval, 'TPR')
+
+## kappa measures how well a PA prediction matches your data
+plot(ibm.bc.eval, 'kappa')
+```
+### Machine learning approach - leave some data out
+Set aside some test data using the k-fold means approach. What you set as the number shows how many "breaks" you want to create in your data. A k-fold of 5, means 5 sets of 20% of data.
+```{r}
+## kfold() doesn't actually break it up yet, just makes an array of numbers from 1-5 drawn at random. Then use this to set aside chunks matching some array value in that data frame.
+group = kfold(ibm.pres, 5) 
+## we can conviniently re-run this within the bioclim function, and just ask it to work with the ibm.pres data that does NOT include group 1. A slower way to do this would be to 'cbind' the group array and the ibm.pres array. != means "does not equal".
+ibm.bc <- bioclim(spain.worldclim, ibm.pres[group != 1,])
+ibm.bc.pred <- predict(object = ibm.bc, spain.worldclim)
+plot(ibm.bc.pred) ## looks pretty similar to before
+```
+Plot the points we used for training, and those used for testing
+```{r}
+plot(ibm.bc.pred, main = 'obs. points colored by train (green) and test (red)')
+## pch makes it a small, filled in circle
+points(ibm.pres[group != 1,], pch = 19, cex = 0.5, col = 'green')
+points(ibm.pres[group == 1,], pch = 19, cex = 0.75, col = 'red')
+```
+
+Now, evaluate your model just on the training data. We do this using the evaluation step as above, but instead compare the test data (group 1) and train data (groups 2-5) to the background data separately.
+```{r}
+ibm.bc.eval.train = evaluate(p = ibm.pres[group != 1,], 
+                       a = ibm.bg, 
+                       model = ibm.bc, 
+                       x = spain.worldclim)
+ibm.bc.eval.test = evaluate(p = ibm.pres[group == 1,], 
+                       a = ibm.bg, 
+                       model = ibm.bc, 
+                       x = spain.worldclim)
+ibm.bc.eval.test@auc
+ibm.bc.eval.train@auc
+```
+### Generalized Linear Models (GLM)
+This requires a little data re-structuring which assigns a 0 and 1 
+```{r}
+## A dataset with long, lat and a column called pres -- which has both our presence and background data in the same df and a zero or 1 in the data frame.
+
+## make a vector called pres with 0s and 1s
+pres <- c(rep(1, nrow(ibm.pres)), rep(0, nrow(ibm.bg)))
+
+## bind the two together by row for one long skinny data frame with lats and longs
+latlon = rbind(ibm.pres, ibm.bg)
+
+## then bind that skinny data frame to the column of 0s and 1s you made before
+ibm.df = cbind(latlon,pres)
+head(ibm.df)
+
+## NOW we take out the environmental predictors from the worldclim data, and bind it to the presence column from ibm.df. Now we have a bunch of climate data and a simple response variable, 'pres'
+ibm.env = extract(spain.worldclim, ibm.df[,1:2])
+ibm.env <- data.frame(ibm.env)
+ibm.env$pres <- ibm.df$pres
+```
+Make a GLM using just bio1 and bio12
+```{r}
+ibm.glm <- glm(pres ~ bio1 + bio12, data = ibm.env, family = 'binomial')
+plot(predict(spain.worldclim, ibm.glm, type = 'response'))
+## can do a polynomial response using poly
+# ibm.glm2 <- glm(pres ~ poly(bio1,2) + poly(bio12,2), data = ibm.env, family = 'binomial')
+# plot(predict(spain.worldclim, ibm.glm2, type = 'response'))
+
+## here's how to write it into a raster, which defaults to ASCII. 
+# write.raster(predict(spain.worldclim,ibm.glm,type = 'response', filename = 'worldpred.asc'))
+```
+### Evaluating SDMs - Dan's digression
+*"Some models are wrong AND useless, and we need to find a way to pick a useful model". *<br><Br>You have to think about what you want your models to represent. If we just wanted a spatial prediction, we could do it with crayons -- just a generalization of where it occurs. But we couldn't use this to predict effects of climate change or the future in general, because you don't know the degree to which what traits influence that distribution. We assume that this relationship between environment and presence is conserved (current frog is similar to future frog).<Br><Br>
+There is an inherent problem with any AUC measure where all presences are coded a higher score than all absences -- regardless of the shape of the model.<br><br>
+<B>*If you don't want to sleep at night, think of the fact that folks are using these types of models to predict the spread of Ebola, and there's no way to tell that what they're doing is so wrong.*</b><br><Br>
+### Due to the nature of the data, we will always suck. But just try to suck less. 
+<Br><br><Br>
+
+##<span style="color:#0040FF"> AFTERNOON SESSION - Dan Warren</span>
+### Working with ENMTools
+####<a href = 'https://github.com/danlwarren/ENMTools'> Haz clic </a href> for DL Warren's Github & Vignette where the ENMTools is sourced. <br> 
+####<a href = 'http://enmtools.blogspot.com.es/'> Here is </a href> the ENMTools blog. <br> 
+Models require a homogeneous wrapper for modeling approaches that integrates bioclim, maxent, glm and other modeling approaches -- this requires a data input that ENMTools can use to execute them all together. These are done in the enmtools.species objects, which contain precense.points, background.points, species.names, range (a raster) and others. Each object is in a list -- which helps you quickly feed your data into various modeling frameworks.
+*Dan said we may not get to everything this week -- but the left-out material is covered on Git.*
+```{r, warning = F, message = F}
+## you may need to download a couple dependecies before you can get the github download to work...may be even more than these.
+# library(gbm)
+# library(ecospat)
+# library(devtools)
+# install_github("danlwarren/ENMTools", ref = 'rf')
+library(ENMTools)
+```
+Make an enmtools.species object:
+```{r, warning = F, message = F, fig.height = 3, fig.width = 3}
+## a blank one
+monticola <- enmtools.species()
+monticola$species.name <- 'monticola'
+monticola$presence.points <- ibm.pres
+monticola$background.points <- data.frame(ibm.bg)
+
+## this function will let you know if there are problems with your data formatting
+monticola <- check.species(monticola)
+```
+### GLMs in ENMTools
+```{r, warning = F, message = F, fig.height = 3, fig.width = 3}
+## This is like the glm we built earlier, but it is able to extract our data right away. F is the function you design just like a normal glm. You can also quickly indicate the test proportion using test.prop (same as k fold). This is nearly identical to maxent's procedure.
+monticola.glm = enmtools.glm(monticola, 
+                             env = spain.worldclim, 
+                             f = pres ~ bio1 + bio12, 
+                             test.prop = 0.2)
+# names(monticola.glm)
+# monticola.glm ## will auto-plot and give summary outcomes. There are many subsets
+
+# monticola.glm$suitability ## brings out map
+monticola.glm$response.plots[12]## response for every layer in spain.worldclim. will be flat for those that weren't fit in the GLM (i.e. everything besides bio1 and bio12.)
+par(mfrow = c(1,1))
+  
+```
+### Polynomial GLM
+```{r, warning = F, message = F}
+## Adding polynomial function adds even more parameters to your model (B0, B1, B2, B3)
+monticola.glm2 = enmtools.glm(monticola, 
+                             env = spain.worldclim, 
+                             f = pres ~ poly(bio1,3) + poly(bio12,3), 
+                             test.prop = 0.2)
+plot(monticola.glm2$suitability)
+## check out our response to bio12
+monticola.glm2$response.plots[[12]]
+monticola.glm2$model ## check AIC
+visualize.enm(model = monticola.glm2, layers = c("bio1","bio12"), env = spain.worldclim)
+```
+What if we don't have background points? It draws from the RANGE raster if available, then the climate layers if nothing else available.
+```{r, warning = F, message = F}
+monticola$background.points <- NA
+plot(buffer.raster)
+## re run the GLM.
+monticola.glm = enmtools.glm(monticola, 
+                             env = spain.worldclim, 
+                             f = pres ~ bio1 + bio12, 
+                             test.prop = 0.2)
+```
+### GAMs in ENMTools
+A more complex one with 20 knots is hashed out below.
+```{r, warning = F, message = F, fig.height =6, fig.width = 6}
+monticola.gam <- enmtools.gam(monticola, env = spain.worldclim, f = pres ~ bio1 + bio12, test.prop = 0.2)
+
+plot(monticola.gam$suitability)
+
+#' So far, we have implemented these modeling types -- you need a local copy of Maxent to run it in R. This will display your model in environment space. Uses viridis package for color visualization.
+
+visualize.enm(model = monticola.gam, 
+              layers = c("bio1","bio12"), 
+                         env =  spain.worldclim)
+
+## higher order gam with a very high # of knots
+# monticola.gam2 = enmtools.gam(monticola, env = spain.worldclim, 
+# f = pres ~ s(bio1, k = 20) + s(bio12, k = 20), test.prop = 0.2)
+# visualize.enm(model = monticola.gam2, layers = c("bio1","bio12"), env =  spain.worldclim)
+```
+### <span style="color:#8000FF">Using MaxEnt in ENMTools<b>
+You need the maxent.jar file installed in the R Win library,</b> but you will use the following syntax.
+```{r, warning = F, message = F, eval = F, include = T}
+monticola.mx <- enmtools.maxent(species = monticola,
+                                env = spain.worldclim, test.prop = 0.3)
+monticola.mx$model ## this will open MaxEnt's HTML file!!
+visualize.enm(monticola.mx, env = spain.worldclim, layers = c('bio15','bio16'))
+```
+## </b>Calculating Metrics and other Final Diagnostics
+
+In ecological biogeography, we are asking WHY species tolerate certain traits. We don't necessarily have to assume that the models are accurate to answer questions about similarities between two populations. We just need differences and similarities between models to be accuarate -- that the differences between models are informative of the difference between niches.<Br><br><B>
+Problems with these assumptions:<Br><Br></b>
+1. Allopatry is common between closely related species, considering availability of habitat.<Br>There could've been historical factors leading to dispersal patterns that *appear* to follow different niches, but is really just an artifact. Basically, we will never know they full truth for allopatric species.<br><br>
+2. Evolutionary history generates spatial autocorrelation! We have analyses meant to deal with this, but it's never perfect. If we think evolution is primarily allopatric, biotic and/or dispersal dynamics will act on spaces where evolutionarily-related species already don't overlap. So we see maximal differences between species that are the most closely related. Basically it's hard to disentagle which is driving differences.<Br>
+
+### Niche Breadth
+<B>Niche breadth:</b> a species' relative spread across a niche (broad vs narrow). Will vary in terms of suitability scores across space. We measure this with <B>Levin's Niche Breadth</b>, just treat suitability scores as proportional to utilization.<br>It's possible that our species have narrow tolerances, but if the environment provided that habitat in abundance, it could certainly exist in many places.
+```{r}
+## monticola.glm
+## suitability in geographic space
+raster.breadth(monticola.glm)
+## visualize.enm(monticola.glm, spain.worldclim, layers = c('bio1','bio12'))
+
+## this draws random points in environment space and estimates how much of that space is suitable for our species
+env.breadth(monticola.glm,spain.worldclim)
+```
+### Overlap
+Checking for similarities between species -- how similar are their suitability score distributions? Bring up a histogram of each and calculate the difference between the two.
+```{r}
+raster.overlap(monticola.glm, monticola.gam)
+## gives you a spearmank rank correlation. These were pretty similar
+
+env.overlap(monticola.glm, monticola.gam, spain.worldclim)
+
+```
+Check correlation between rasters and suitability scores
+```{r, fig.height = 5, fig.width = 5}
+corstack = stack(monticola.glm$suitability, spain.worldclim[[c("bio1","bio2")]])
+raster.cor.matrix(corstack)
+plot(corstack)
+```
+### Monte Carlo Tests
+How does our outcomes modify what we expect to see? We need a way to estimate a distribution of expectations - what does it mean for nothing to be going on? A null hypothesis could be that two species have exactly the same niche. Any observed differences would be sampling error. We can iterate this many times and iterate the relative probability of a given observation -- if this falls outside our null distribution, we can reject it (pretty standard). This helps us work with our current data by re-simulating a bunch of times. <B> Use simulation to randomly generate data under a null distribution.</b>
+
+
+### Niche Conservatism
+We test by looking at our real occurence points and measure overlap between others -- then we switch out the identity of the species and compare.
+
+### Niche Identity - <B> working with clade data </b>
+```{r}
+load("C:/Users/M Kapur/Downloads/iberolacerta.clade.Rd")
+class(iberolacerta.clade)
+## Contains a list of species and a tree.
+names(iberolacerta.clade$species)
+iberolacerta.clade
+```
+Compare two species using a GLM or other comparison type. This returns a list of replicates and models for the empirical data across whatever parameters provided. Default nreps is 100. Species can be similar but not identical.
+```{r, fig.height = 8, fig.width = 8}
+# ib.id <- identity.test(iberolacerta.clade$species$monticola,
+#               iberolacerta.clade$species$cyreni, 
+#               env =  spain.worldclim, 
+#               nreps = 25,
+#               type = 'bc')
+ib.id
+```
+### Background Test
+Tests if observed distribution is different from accessible background habitat (e.g. buffer zone). In all cases, you look at the plots to see if they fit within the null distribution (the dotted line) or not.
+```{r}
+par(mfrow = c(1,2))
+plot(iberolacerta.clade$species$monticola$range) ## set of background sample range
+plot(iberolacerta.clade$species$cyreni$range)
+par(mfrow = c(1,1))
+```
+```{r, fig.height = 8, fig.width = 8}
+## you could run a gam test to compare the two
+id.bg <- background.test(iberolacerta.clade$species$monticola,
+              iberolacerta.clade$species$cyreni, 
+              env =  spain.worldclim, 
+              nreps = 3,
+              type = 'gam', test.type = 'symmetric')
+id.bg
+```
+### Age-Range Correlation Tests
+An old idea. If you have sympatric speciation going on, at the shallowest points in the tree, the overlap between species ranges will be high. If nothing's driving them apart, deeper-rooted ones may still be close, but we expect a range drift. If allopatric speciation is occuring, we expect little to no overlap shallow in the tree, but perhaps more as times go on. The question is, how much does their range overlap as a function of their depth in the phylogeny? Unfortunately much of this violates assumptions of linear regression because of the lack of independence. Also, as we go deeper in the tree we have fewer and fewer samples -- so the distribution can't be uniform across nodes.<Br> <Br><b>Don't fear!</b> we have a linear regression-y test with MCMC to evaluate this. We reshuffle the tree tips and generate a bunch of slopes between Overlap and Time, and compare the empirical to the simulated replicates. If the intercept is higher than expected, we say there is more sympatry shallow in the tree than we'd expect by chance.
+```{r, fig.height = 6, fig.width = 8, warning = F, MESSAGE = F}
+ib.arc <- enmtools.aoc(clade = iberolacerta.clade,
+                       overlap.source = 'range', nreps = 5)
+ib.arc
+## There is more overlap than we'd expect by chance (the intercept is higher)
+```
+How similar are our point data to eacother?
+```{r, fig.height = 6, fig.width = 8}
+ib.apc <- enmtools.aoc(clade = iberolacerta.clade,
+                        overlap.source = 'points',
+                        nreps = 5)
+
+ib.apc ## seems no more similar or different than expected by chance. Are they avoiding eachother on a finer spatial scale?
+```
+Now do it based on niche models in geographic space.
+```{r, fig.height = 6, fig.width = 8}
+ib.clade.small <- iberolacerta.clade
+## take out the species which have too few samples
+ib.clade.small$species$martinezricai <- NULL
+ib.clade.small$species$horvathi <- NULL
+ib.clade.small$tree <- drop.tip(ib.clade.small$tree, c('martinezricai','horvathi'))
+
+ib.anc.geo <- enmtools.aoc(clade = ib.clade.small,
+                        overlap.source = 'gam',
+                        env = spain.worldclim,
+                        nreps = 10, metric = 'cor')
+
+ib.anc.geo ## seems no more similar or different than expected by chance
+```
+
+
+
+
+
+
