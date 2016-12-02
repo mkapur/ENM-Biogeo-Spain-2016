@@ -1,0 +1,935 @@
+---
+title: 'Ecological & Evolutionary Biogeography Day 5: Linking Historical Biogeo & ENM'
+author: <a href = 'http://www.maiarkapur.wordpress.com'>Maia Kapur</a href>
+date: "2 Dec 2016 - Barcelona, Spain"
+output: 
+  html_notebook: 
+    toc: yes
+---
+## <span style="color:#0040FF"> MORNING SESSION pt I - Nick Matzke</span>
+<br>
+<span style="color:#B40431"> <B>Note: Per his request, Nick's material used to execute the code for today will NOT be offered on Github with this tutorial. Workshop members downloaded the zipfile and distance.txt files in class. </span></b>
+
+### Trait-based (trait depedent) biogeography models
+Much of the discussed work published yet, but he has the code.<Br>
+Snoring rail: flightless bird that lost ability of flight due to lack of predators in newly colonized areas. Our methods don't do the best job of dealing with this sort of parallel trait extinction -- in fact, <b> they all leave out traits!</b>
+<br><Br>
+All prev. discussed models assume dispersal rate is constant, but we know that traits aer crucial to seed dispersal, rafting ability, flight, etc. Many traits are adaptive in local ecology & relate to dispersal, but they may not help you in very rare, global cases. <Br><Br>
+<span style="color: #8A0829"> 
+
+#### Case study: Pacific Rails<Br></span>
+Nick narrowed this down to 12-13 areas. The std. trait model would suggest that flight re-evolved many times. We add in traight flight on tree parameters of model, which include a rate of flight loss, flight gain, and a multiplier on dispersal probabilities while flightless (could decrease dispersal probability). Essentially, we just build on the features of biogeoBEARS. Nick ran several types of several models to get parameter estimates.<Br><Br>
+Check out package <b> archipelago() </b> by Jeet Sukumaran. This has you forward simulate many histories, and pick the ones that match your data. Pretty inefficient, but really flexible.
+
+### Cryptoblepharus lizards
+Here we work with adding in traits to BioGeoBEARS. This hasn't been published yet, and the trait-inclusion code isn't finalized but he lets us use it here.<br><Br> 
+We downloaded files in class from here (they may no longer be available): http://phylo.wikidot.com/transsci<Br><br>
+You have to manipulate some of the code to refer to your directory. You'll notice that the first bit of this code is identical to what we did on Day 4 to get BioGeoBEARS up & running; extensive annotation for those setup steps are available there. This part was sourced from the file <b> M4_DEC+J+t12+t21+x_m2free_optimxFinal_v1.R. & DEC+J</b> downloaded in class. <Br>
+Setup
+```{r, warning=F,message=F}
+# Load the package (after installation, see above).
+library(optimx)         # You need to have some version of optimx available
+                        # as it is a BioGeoBEARS dependency; however, if you
+                        # don't want to use optimx, and use optim() (from R core) 
+                        # you can set:
+                        # BioGeoBEARS_run_object$use_optimx = FALSE
+                        # ...everything should work either way -- NJM 2014-01-08
+library(FD)       # for FD::maxent() (make sure this is up-to-date)
+library(snow)     # (if you want to use multicore functionality; some systems/R versions prefer library(parallel), try either)
+library(parallel)
+# library(BioGeoBEARS)
+```
+Run the library() command and load all the source scripts remotely
+```{r, warning=F,message=F}
+library(BioGeoBEARS)
+source("http://phylo.wdfiles.com/local--files/biogeobears/cladoRcpp.R") # (needed now that traits model added; source FIRST!)
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_add_fossils_randomly_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_basics_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_calc_transition_matrices_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_classes_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_detection_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_DNA_cladogenesis_sim_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_extract_Qmat_COOmat_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_generics_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_models_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_on_multiple_trees_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_plots_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_readwrite_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_simulate_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_SSEsim_makePlots_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_SSEsim_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_stochastic_mapping_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_stratified_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_univ_model_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/calc_uppass_probs_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/calc_loglike_sp_v01.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/get_stratified_subbranch_top_downpass_likelihoods_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/runBSM_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/stochastic_map_given_inputs.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/summarize_BSM_tables_v1.R")
+source("http://phylo.wdfiles.com/local--files/biogeobears/BioGeoBEARS_traits_v1.R") # added traits model
+calc_loglike_sp = compiler::cmpfun(calc_loglike_sp_prebyte)    # crucial to fix bug in uppass calculations
+calc_independent_likelihoods_on_each_branch = compiler::cmpfun(calc_independent_likelihoods_on_each_branch_prebyte)
+    # slight speedup hopefully
+
+# source('/drives/Dropbox/_njm/__packages/BioGeoBEARS_setup/BioGeoBEARS_on_multiple_trees_v1.R', chdir = TRUE)
+
+#######################################################
+# Local source()-ing method -- uses BioGeoBEARS sourceall() function 
+# on a directory of .R files, so you don't have to type them out.
+# The directories here are on my machine, you would have to make a 
+# directory, save the .R files there, and refer to them.
+#
+# NOTE: it's best to source the "cladoRcpp.R" update first, to avoid warnings like this:
+##
+## Note: possible error in 'rcpp_calc_anclikes_sp_COOweights_faster(Rcpp_leftprobs = tmpca_1, ': 
+##         unused arguments (m = m, m_null_range = include_null_range, jts_matrix = jts_matrix) 
+```
+TO USE: Delete or comment out the 'source("http://...")' commands above, and un-comment the matrix_utils source below...
+```{r, warning=F,message=F}
+# Un-comment (and fix directory paths) to use:
+# library(BioGeoBEARS)
+# source("/drives/Dropbox/_njm/__packages/cladoRcpp_setup/cladoRcpp.R")
+## the next line will work as-is if "_matrix_utils_v1" is saved in your working directory
+source("_matrix_utils_v1.R")
+# sourceall("/drives/Dropbox/_njm/__packages/BioGeoBEARS_setup/")
+# calc_loglike_sp = compiler::cmpfun(calc_loglike_sp_prebyte)    # crucial to fix bug in uppass calculations
+# calc_independent_likelihoods_on_each_branch = compiler::cmpfun(calc_independent_likelihoods_on_each_branch_prebyte)
+```
+### Load Geography and Tree Files & Run DEC_J
+Make sure you download the distances file from the site. All the other files referenced are available in the zip file - which I just droped into my working directory.
+```{r, warning=F,message=F}
+# SETUP: YOUR TREE FILE AND GEOGRAPHY FILE
+# Example files are given below. To run your own data,
+# make the below lines point to your own files, e.g.
+# trfn = "/mydata/frogs/frogBGB/tree.newick"
+# geogfn = "/mydata/frogs/frogBGB/geog.data"
+```
+```{r, warning=F,message=F}
+# Notes: 
+# 1. Must be binary/bifurcating: no polytomies
+# 2. No negative branchlengths (e.g. BEAST MCC consensus trees sometimes have negative branchlengths)
+# 3. Be careful of very short branches, as BioGeoBEARS will interpret ultrashort branches as direct ancestors
+# 4. You can use non-ultrametric trees, but BioGeoBEARS will interpret any tips significantly below the 
+#    top of the tree as fossils!  This is only a good idea if you actually do have fossils in your tree,
+#    as in e.g. Wood, Matzke et al. (2013), Systematic Biology.
+# 5. The default settings of BioGeoBEARS make sense for trees where the branchlengths are in units of 
+#    millions of years, and the tree is 1-1000 units tall. If you have a tree with a total height of
+#    e.g. 0.00001, you will need to adjust e.g. the max values of d and e, or (simpler) multiply all
+#    your branchlengths to get them into reasonable units.
+# 6. DON'T USE SPACES IN SPECIES NAMES, USE E.G. "_"
+```
+```{r, warning=F,message=F}
+# This is the example Newick file for Hawaiian Legume
+# (from Ree & Smith 2008)
+# "trfn" = "tree file name"
+trfn = "tree.newick"
+
+# Look at the raw Newick file:
+# moref(trfn)
+
+# Look at your phylogeny:
+tr = read.tree(trfn)
+# tr
+# plot(tr)
+# title("Legume phylogeny")
+# axisPhylo() # plots timescale
+
+#######################################################
+# Geography file
+# Notes:
+# 1. This is a PHLYIP-formatted file. This means that in the 
+#    first line, 
+#    - the 1st number equals the number of rows (species)
+#    - the 2nd number equals the number of columns (number of areas)
+# 2. This is the same format used for C++ LAGRANGE geography files.
+# 3. All names in the geography file must match names in the phylogeny file.
+# 4. DON'T USE SPACES IN SPECIES NAMES, USE E.G. "_"
+# 5. Operational taxonomic units (OTUs) should ideally be phylogenetic lineages, 
+#    i.e. genetically isolated populations.  These may or may not be identical 
+#    with species.  You would NOT want to just use specimens, as each specimen 
+#    automatically can only live in 1 area, which will typically favor DEC+J 
+#    models.  This is fine if the species/lineages really do live in single areas,
+#    but you wouldn't want to assume this without thinking about it at least. 
+#    In summary, you should collapse multiple specimens into species/lineages if 
+#    data indicates they are the same genetic population.
+######################################################
+
+# This is the example geography file for Hawaiian Legume
+# (from Ree & Smith 2008)
+geogfn = "geog.data"
+
+# Look at the raw geography text file:
+# moref(geogfn)
+
+# Look at your geographic range data:
+tipranges = getranges_from_LagrangePHYLIP(lgdata_fn=geogfn)
+# tipranges
+
+# Set the maximum number of areas any species may occupy; this cannot be larger 
+# than the number of areas you set up, but it can be smaller.
+max_range_size = 2
+
+
+BioGeoBEARS_run_object = define_BioGeoBEARS_run()
+BioGeoBEARS_run_object$trfn = trfn
+BioGeoBEARS_run_object$geogfn = geogfn
+BioGeoBEARS_run_object$max_range_size = max_range_size
+BioGeoBEARS_run_object$min_branchlength = 0.000001    # Min to treat tip as a direct ancestor (no speciation event)
+BioGeoBEARS_run_object$include_null_range = TRUE    # set to FALSE for e.g. DEC* model, DEC*+J, etc.
+# (For DEC* and other "*" models, please cite: Massana, Kathryn A.; Beaulieu, 
+#  Jeremy M.; Matzke, Nicholas J.; O’Meara, Brian C. (2015). Non-null Effects of 
+#  the Null Range in Biogeographic Models: Exploring Parameter Estimation in the 
+#  DEC Model. bioRxiv,  http://biorxiv.org/content/early/2015/09/16/026914 )
+# Also: search script on "include_null_range" for other places to change
+
+# Set up a time-stratified analysis:
+#BioGeoBEARS_run_object$timesfn = "timeperiods.txt"
+#BioGeoBEARS_run_object$dispersal_multipliers_fn = "manual_dispersal_multipliers.txt"
+#BioGeoBEARS_run_object$areas_allowed_fn = "areas_allowed.txt"
+#BioGeoBEARS_run_object$areas_adjacency_fn = "areas_adjacency.txt"
+BioGeoBEARS_run_object$distsfn = "distances_rescaled.txt"
+# See notes on the distances model on PhyloWiki's BioGeoBEARS updates page.
+
+# Speed options and multicore processing if desired
+BioGeoBEARS_run_object$speedup = TRUE          # shorcuts to speed ML search; use FALSE if worried (e.g. >3 params)
+BioGeoBEARS_run_object$use_optimx = "optimx"     # if FALSE, use optim() instead of optimx()
+BioGeoBEARS_run_object$num_cores_to_use = 12
+BioGeoBEARS_run_object$force_sparse = FALSE    # force_sparse=TRUE causes pathology & isn't much faster at this scale
+
+# This function loads the dispersal multiplier matrix etc. from the text files into the model object. Required for these to work!
+# (It also runs some checks on these inputs for certain errors.)
+BioGeoBEARS_run_object = readfiles_BioGeoBEARS_run(BioGeoBEARS_run_object)
+
+# Divide the tree up by timeperiods/strata (uncomment this for stratified analysis)
+#BioGeoBEARS_run_object = section_the_tree(inputs=BioGeoBEARS_run_object, make_master_table=TRUE, plot_pieces=FALSE)
+# The stratified tree is described in this table:
+#BioGeoBEARS_run_object$master_table
+
+# Good default settings to get ancestral states
+BioGeoBEARS_run_object$return_condlikes_table = TRUE
+BioGeoBEARS_run_object$calc_TTL_loglike_from_condlikes_table = TRUE
+BioGeoBEARS_run_object$calc_ancprobs = TRUE    # get ancestral states from optim run
+
+# Set up DEC+J model
+# Get the ML parameter values from the 2-parameter nested model
+# (this will ensure that the 3-parameter model always does at least as good)
+dstart = 0.012
+estart = 0.0001
+jstart = 0.096
+xstart = -1.23
+
+# Input starting values for d, e
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["d","init"] = dstart
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["d","est"] = dstart
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["e","init"] = estart
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["e","est"] = estart
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["d","min"] = 0.0115
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["d","max"] = 0.0125
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["e","min"] = 0.000001
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["e","max"] = 0.001
+
+# Add j as a free parameter
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["j","type"] = "free"
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["j","init"] = jstart
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["j","est"] = jstart
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["j","min"] = 0.09
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["j","max"] = 0.1
+
+# Add x as a free parameter
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["x","type"] = "free"
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["x","init"] = xstart
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["x","est"] = xstart
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["x","min"] = -1.24
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["x","max"] = -1.22
+
+
+BioGeoBEARS_run_object$rescale_params = FALSE
+
+# Check the inputs
+check_BioGeoBEARS_run(BioGeoBEARS_run_object)
+
+# TRAITS MODEL
+# Now, load a trait dataset (trait "Fly"/"Non", for flightlessness)
+trait_fn = "trait_v1.txt"
+# Add the traits data and model
+BioGeoBEARS_run_object = add_trait_to_BioGeoBEARS_run_object(BioGeoBEARS_run_object, trait_fn=trait_fn)
+
+
+# Look at the params table
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table
+
+#######################################################
+# Manual modifications of trait-based model
+#######################################################
+# Edit t12 and t21 rates
+
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t12", "type"] = "free"
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t12", "init"] = 0.007
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t12", "est"] = 0.007
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t12", "min"] = 0.0065
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t12", "max"] = 0.0075
+
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t21", "type"] = "free"
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t21", "init"] = 0.0001
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t21", "est"] = 0.0001
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t21", "min"] = 0.000001
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t21", "max"] = 0.001
+
+
+# Set 0/1 multipliers on dispersal rate
+# For flightlessness (m2), max multiplier is 1, and
+# fix to a small value, or estimate
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m1", "type"] = "fixed"
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m1", "init"] = 1
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m1", "est"] = 1
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m1", "min"] = 0.01
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m1", "max"] = 1
+
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "type"] = "free"
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 6.077
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 6.077
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "min"] = 5
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "max"] = 7
+```
+Now you'll see we have additional parameters.
+```{r}
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table
+```
+### Manual modifications of trait-based model
+We're changing the initial values here -- you typically wouldn't start by doing this.
+```{r}
+# Edit t12 and t21 rates
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t12", "type"] = "free"
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t12", "init"] = 0.007
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t12", "est"] = 0.007
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t12", "min"] = 0.0065
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t12", "max"] = 0.0075
+
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t21", "type"] = "free"
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t21", "init"] = 0.0001
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t21", "est"] = 0.0001
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t21", "min"] = 0.000001
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["t21", "max"] = 0.001
+
+# Set 0/1 multipliers on dispersal rate
+# For flightlessness (m2), max multiplier is 1, and
+# fix to a small value, or estimate
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m1", "type"] = "fixed"
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m1", "init"] = 1
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m1", "est"] = 1
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m1", "min"] = 0.01
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m1", "max"] = 1
+
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "type"] = "free"
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 6.077
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 6.077
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "min"] = 5
+BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "max"] = 7
+```
+Extra modifications (optional)
+```{r, include = F}
+
+#######################################################
+# Reorder the m1, m2, etc. -- see if this improves
+# optimx function...
+#######################################################
+# mparam_rows_TF = grepl(pattern="trait-based dispersal rate multiplier", x=BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table$desc)
+# 
+# tmp_params_table1 = BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table[mparam_rows_TF==TRUE,]
+# tmp_params_table2 = BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table[mparam_rows_TF==FALSE,]
+# tmp_params_table = rbind(tmp_params_table1, tmp_params_table2)
+# class(tmp_params_table)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table = tmp_params_table
+
+
+#######################################################
+# Add sudden trait transition during jump events
+#######################################################
+# BioGeoBEARS_run_object = add_jts_to_BioGeoBEARS_run_object(BioGeoBEARS_run_object, numtrait_states=2)
+# 
+# BioGeoBEARS_run_object$jts_txt_matrix
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table
+
+# Manual modifications of jt12 and jt21
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["jt12","type"] = "fixed"
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["jt12","init"] = 0.0
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["jt12","est"] = 0.0
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["jt21","type"] = "fixed"
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["jt21","init"] = 0.0
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["jt21","est"] = 0.0
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table
+
+#######################################################
+# Manually run through a variety of m2 values
+#######################################################
+
+
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 0.01
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 0.01
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 0.1
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 0.1
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 0.2
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 0.2
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 0.3
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 0.3
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 0.4
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 0.4
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# # Wow! 0.5 really is near the ML estimate!
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 0.5
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 0.5
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 0.6
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 0.6
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 0.7
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 0.7
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 0.8
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 0.8
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 0.9
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 0.9
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 1.0
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 1.0
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 1.1
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 1.1
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 1.2
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 1.2
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 1.6
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 1.6
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 2.0
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 2.0
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 3
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 3
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 4
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 4
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 5
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 5
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# # This is about the optimum
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 6
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 6
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 7
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 7
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 8
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 8
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 9
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 9
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 10
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 10
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+# 
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "init"] = 11
+# BioGeoBEARS_run_object$BioGeoBEARS_model_object@params_table["m2", "est"] = 11
+# res = bears_optim_run(BioGeoBEARS_run_object, skip_optim=TRUE)
+
+```
+Run It
+```{r, warning = F, message = F}
+BioGeoBEARS_run_object$rescale_params = FALSE
+p = proc.time()
+resfn = "Cryptoblepharus_DEC+J+t12+t21+x+m2free_M4_distances_v1.Rdata"
+runslow = TRUE
+if (runslow)
+    {
+    #sourceall("/Dropbox/_njm/__packages/BioGeoBEARS_setup/")
+
+    res = bears_optim_run(BioGeoBEARS_run_object)
+    res    
+
+    save(res, file=resfn)
+
+    resDECj = res
+    } else {
+    # Loads to "res"
+    load(resfn)
+    resDECj = res
+    }
+```
+###Plotting
+
+Collapse joint probabilities to geography probabilities for plotting
+```{r}
+geog_res = res
+trait_res = res
+num_geog_states = 137
+```
+Plotting Geography
+```{r}
+# Produce probabilities of geographic ranges at
+# nodes (branch tops)
+geog_res$ML_marginal_prob_each_state_at_branch_top_AT_node = res$ML_marginal_prob_each_state_at_branch_top_AT_node[,1:num_geog_states] + res$ML_marginal_prob_each_state_at_branch_top_AT_node[,(num_geog_states+1):(2*num_geog_states)]
+
+# Produce probabilities of geographic ranges at
+# corners (branch bottoms)
+geog_res$ML_marginal_prob_each_state_at_branch_bottom_below_node = res$ML_marginal_prob_each_state_at_branch_bottom_below_node[,1:num_geog_states] + res$ML_marginal_prob_each_state_at_branch_bottom_below_node[,(num_geog_states+1):(2*num_geog_states)]
+```
+Plotting Traits
+```{r}
+# Produce probabilities of geographic ranges at
+# nodes (branch tops)
+trait0 = rowSums(res$ML_marginal_prob_each_state_at_branch_top_AT_node[,1:num_geog_states])
+trait1 = rowSums(res$ML_marginal_prob_each_state_at_branch_top_AT_node[,(num_geog_states+1):(2*num_geog_states)])
+trait_res$ML_marginal_prob_each_state_at_branch_top_AT_node = cbind(trait0, trait1)
+
+# Produce probabilities of geographic ranges at
+# corners (branch bottoms)
+trait0 = rowSums(res$ML_marginal_prob_each_state_at_branch_bottom_below_node[,1:num_geog_states])
+trait1 = rowSums(res$ML_marginal_prob_each_state_at_branch_bottom_below_node[,(num_geog_states+1):(2*num_geog_states)])
+trait_res$ML_marginal_prob_each_state_at_branch_bottom_below_node = cbind(trait0, trait1)
+```
+Load tree and tipranges
+```{r}
+trfn = "tree.newick"
+
+# Look at the raw Newick file:
+moref(trfn)
+
+# Look at your phylogeny:
+tr = read.tree(trfn)
+tr
+# plot(tr)
+# title("Legume phylogeny")
+# axisPhylo() # plots timescale
+
+trait_fn = "trait_v1.txt"
+
+# Look at the raw geography text file:
+moref(trait_fn)
+
+# Look at your geographic range data:
+trait = getranges_from_LagrangePHYLIP(lgdata_fn=trait_fn)
+trait
+```
+PDF plots - geography
+```{r}
+pdffn = "Cryptoblepharus_geog_wo_trait_m2free_M4_distances_v1states.pdf"
+pdf(pdffn, width=8.5, height=11)
+
+## Plot ancestral states - DEC
+
+analysis_titletxt ="Cryptoblepharus_geog_wo_trait_m2free M4_distances"
+
+# Setup
+results_object = geog_res
+scriptdir = np(system.file("extdata/a_scripts", package="BioGeoBEARS"))
+
+# States
+res2 = plot_BioGeoBEARS_results(results_object, analysis_titletxt, addl_params=list("j"), plotwhat="text", label.offset=0.45, tipcex=0.8, statecex=0.8, splitcex=0.75, titlecex=0.8, plotsplits=TRUE, cornercoords_loc=scriptdir, include_null_range=TRUE, tr=tr, tipranges=tipranges, ylims=NULL)
+
+dev.off()  # Turn off PDF
+cmdstr = paste("open ", pdffn, sep="")
+system(cmdstr) # Plot it
+
+
+pdffn = "Cryptoblepharus_geog_wo_trait_m2free_M4_distances_v1pies.pdf"
+pdf(pdffn, width=8.5, height=11)
+
+# Pie chart
+plot_BioGeoBEARS_results(results_object, analysis_titletxt, addl_params=list("j"), plotwhat="pie", label.offset=0.45, tipcex=0.7, statecex=0.8, splitcex=0.75, titlecex=0.8, plotsplits=TRUE, cornercoords_loc=scriptdir, include_null_range=TRUE, tr=tr, tipranges=tipranges, ylims=NULL)
+
+
+dev.off()  # Turn off PDF
+cmdstr = paste("open ", pdffn, sep="")
+system(cmdstr) # Plot it
+
+```
+PDF plots - trait
+```{r}
+pdffn = "Cryptoblepharus_trait_wo_geog_m2free_M4_distances_v1states.pdf"
+pdf(pdffn, width=8.5, height=11)
+
+## Plot ancestral states - DEC
+
+analysis_titletxt ="Cryptoblepharus_trait_wo_geog_m2free M4_distances"
+
+# Setup
+trait_res$inputs$max_range_size = 1	# max number of traits is 1
+results_object = trait_res
+scriptdir = np(system.file("extdata/a_scripts", package="BioGeoBEARS"))
+
+# States
+res2 = plot_BioGeoBEARS_results(results_object, analysis_titletxt, addl_params=list("j"), plotwhat="text", label.offset=0.45, tipcex=0.8, statecex=0.8, splitcex=0.75, titlecex=0.8, plotsplits=TRUE, cornercoords_loc=scriptdir, include_null_range=FALSE, tr=tr, tipranges=trait, ylims=NULL, colors_list_for_states=c("green3", "blue"))
+
+dev.off()  # Turn off PDF
+cmdstr = paste("open ", pdffn, sep="")
+system(cmdstr) # Plot it
+
+
+pdffn = "Cryptoblepharus_trait_wo_geog_m2free_M4_distances_v1pies.pdf"
+pdf(pdffn, width=8.5, height=11)
+
+
+# Pie chart
+plot_BioGeoBEARS_results(results_object, analysis_titletxt, addl_params=list("j"), plotwhat="pie", label.offset=0.45, tipcex=0.7, statecex=0.8, splitcex=0.75, titlecex=0.8, plotsplits=TRUE, cornercoords_loc=scriptdir, include_null_range=FALSE, tr=tr, tipranges=trait, ylims=NULL, colors_list_for_states=c("green3", "blue"))
+
+
+dev.off()  # Turn off PDF
+cmdstr = paste("open ", pdffn, sep="")
+system(cmdstr) # Plot it
+```
+## <span style="color:#0040FF"> MORNING SESSION pt II - Dan Warren</span>
+<br>
+*Note: Dan will do package RWTY demo tonight at dinner for interested parties. Random Forests now available in ENMTools as of last night. Dropbox now has example for how clade object was built.*
+
+### Working with ENMTools and EcoSpat
+```{r, warning = F, message = F}
+## you'll want to get rid of the ref = 'rf' part of installing from github once ENMTools goes live in a few weeks.Re-download biotic worldclim data & crop it to the degrees extent of Spain using known numbers.
+library(ENMTools)
+library(rgdal)
+load("iberolacerta.clade.Rd")
+class(iberolacerta.clade)
+## Contains a list of species and a tree.
+names(iberolacerta.clade$species)
+# iberolacerta.clade
+monticola = iberolacerta.clade$species$monticola
+cyreni = iberolacerta.clade$species$cyreni
+
+all.worldclim <- raster::getData("worldclim", res = 10, var = 'bio')
+euro.worldclim <- crop(all.worldclim, extent(-10,17,39,48))
+plot(euro.worldclim[[1]])
+```
+Port to ecospat.<b> You are restricted to 2 Variables</b>
+```{r, warning = F, message = F}
+ib.id = enmtools.ecospat.id(monticola, cyreni,
+                            env = euro.worldclim,
+                           layers = c('bio1','bio12'))
+```
+Visualize it. In these plots, we see the density as the result of dividing its occurence by the suitable habitat.
+```{r, warning = F, message = F, fig.height = 8, fig.width = 8}
+ib.id
+```
+```{r}
+ib.bg <- enmtools.ecospat.bg(monticola, cyreni,
+                             env = euro.worldclim,
+                             layers = c('bio1','bio12'))
+```
+```{r, warning = F, message = F, fig.height = 8, fig.width = 8}
+ib.bg
+```
+### <b> Dan's Evolution in Niche Modeling Lecture </b>
+Evolution species models useful for studying species distribution models -- can be used to enhance them too. It can help us deal with problems in the data. <Br><Br>
+Niche conservatism was basis for identity and background tests, but a primary finding is that the closer two species are evolutionarily, the closer they are in terms of their environmental tolerances. This is useful - because if two different species have two similar tolerances (niche), they may be restricted to different subsets of that niche.  We can then take data from both together and therefore get a better sampling of the entire range that those species can tolerate. *Dan's slide showed stronger model outcomes when more of the sampling space is included by replacing 1/2 the data points for one species with a sister species*. In this way, using only one species can result in a good distribuion model, but a poor niche model -- crucial for questions in climate change. You <b> must model niches at the correct taxonomic scale -- the ecological truth may be that multiple mountaintops are fine for species only found on one!</b>
+<Br><Br>
+Consider, if niche evolution is very fast, it might not be so good an idea to throw them together. So the rate of niche evolution is important, and the more a species' suitabile habitat is UNKNOWN, the more helpful it is to use sister species. If it already lives everywhere it can live, a sister species isn't going to help much.
+<Br><Br>
+He showed an example of simulating a niche and the clade of 10+ organisms. You can compare outcomes of modeling all 10 spp together or separately. We can always model a species' *distribution* best alone, but we're interested in the quality of the *niche* model. The rate of niche evolution doesn't have to be zero to have it be advantageous to pool species. <Br>
+<br><b> Approach</b><br>
+GLM in R. Choose clustering using AIC, and make comparisons using the *same* presence and pseudo-absence data.
+
+### Pooling species within Iberolacerta
+```{r, warning=F,message=F}
+## the moses.list accepts your species & whatever environmental layers and automatically does the pooled & unpooled GLMs
+ib.moses = moses.list(list(cyreni, monticola), 
+                      euro.worldclim[[c(1,8)]])
+```
+```{r, warning=F,message=F}
+ib.moses$separate.aic
+ib.moses$combined.aic
+## Looks like we're better doing it separately
+# ib.moses$separate.glms
+```
+```{r, warning=F,message=F}
+plot(iberolacerta.clade$tree)
+## looks like they aren't actually sister species. let's try it with two more closely related.
+```
+```{r, warning=F,message=F}
+## try it again with two more related species. You can also pass in a formula to the environmental layers
+
+ib.moses = moses.list(list(iberolacerta.clade$species$aranica, 
+                           iberolacerta.clade$species$aurelioi),
+                      env = euro.worldclim,
+                      f = pres ~ poly(bio1, 2) + poly(bio12,2))
+```
+```{r, warning=F,message=F}
+ib.moses$separate.aic
+ib.moses$combined.aic
+## Looks like we're better doing it combined this time
+# ib.moses$combined.glms
+```
+Now add in a bunch more, treating each node as a separate, nested hypothesis
+```{r}
+ib.moses = moses.list(list(iberolacerta.clade$species$aranica, 
+                           iberolacerta.clade$species$aurelioi,
+                           iberolacerta.clade$species$bonnali),
+                      env = euro.worldclim,
+                      f = pres ~ poly(bio1, 2) + poly(bio12,2))
+ib.moses
+```
+```{r}
+visualize.enm(model = ib.moses$combined.glm, env = euro.worldclim, layers = c('bio1','bio12'))
+```
+
+
+Get away from the idea that the AUC score or Kappa is the #1. Don't be obsessed with discrimination accuracy. Maybe we should value biological insight -- not just precision of prediction! So sometimes a model may overpredict a distribution, and that should be OK.
+
+## <span style="color:#0040FF"> AFTERNOON SESSION - Nick Matzke</span>
+### Nick's talk about what he's up to nowadays. 
+In phylogenetic niche conservatism, an idea housed in phyloclim is taking models fit to different species and retun complex curves (across a predictor) for living species. Then use these to estimate ancestral preferences by taking the mean. A niche model could alternatively take distributions with Brownian motion of min-max niche range. (This is probably the most sophisticated approach so far).
+<Br><br>
+<b>Unsolved problem</b>: how are niches homologous? Meaning, if a model is more complex than just a min and a max, what is the complex dynamic underlying those preferences? Each species could have something as simple as two slopes and an optimum point (three parameters) describing their niche for a given relationship. <br><br>
+He proposes <B> PhyloSDM </b>having 3 params per species per variable, and added in evolutionary pameters. But the advantage is that it would use faster, traditional heuristic searches. We'd still need to think up the evaluation metrics.Currently being programmed in JAGS/R2JAGS. MCMC Methods.
+
+### A brief demo of PhyloSDM
+Note: we downloaded a test data file in class, testdata.zip .<br>
+GOAL: simulate some niche evolution. The species ranges will really, truly, be completely controlled by their niche preference in the variable pc1. <br>
+Dataset: env pc1-pc4 from Cuba, in Dan Warren's ENMtools dataset. Dan Warren's ENMTools package in R: https://github.com/danlwarren/ENMTools
+<br><B><Br>
+You will need phytools installed to have fastBM and siimilar functions work -- I couldn't get it working on my machine so the code from there on down is unevaluated.</b>
+```{r, warning = F, message = F}
+# library(devtools); install_github(repo="danlwarren/ENMTools")
+library(ENMTools)
+library(phytools)	# for e.g. fastBM
+library(boot) # For logit, inv.logit
+```
+```{r, warning = F, message = F}
+source("http://phylo.wdfiles.com/local--files/transsci/phyloENM_sims_v1.R")
+
+# Source code for simple phyloENM simulations
+# source("phyloENM_sims_v1.R")
+
+#wd = "/drives/GDrive/__GDrive_projects/2016-07-19_Dan_Warren/"
+#setwd(wd)
+```
+
+# Read in some environmental data
+```{r, warning = F, message = F}
+env.files <- list.files(path = "testdata/", pattern = "pc", full.names = TRUE)
+env <- stack(env.files)
+```
+```{r, warning = F, message = F}
+# We will decide that pc1 is the only niche space the
+# species are evolving in
+
+# Their true niche model will have an optimum, where suitability 
+# is 0.99. This will optimum will evolve by Brownian motion.
+
+# And, two declining splines on each side, controlled by their
+# slopes in logit space
+
+# Get the environmental data
+vals = as.data.frame(env$pc1)
+mean(vals$pc1, na.rm=TRUE)
+min(vals$pc1, na.rm=TRUE)
+max(vals$pc1, na.rm=TRUE)
+# mean: 2321.985, min/max: 1491/3396
+
+# The starting point for the ancestor will be the mean
+# of the observed environmental variable (although we
+# could pick anything we like)
+anc_optimum = mean(vals$pc1, na.rm=TRUE)
+env_min = min(vals$pc1, na.rm=TRUE)
+env_max = max(vals$pc1, na.rm=TRUE)
+
+# The slopes will start at +0.1 and -0.1
+anc_slope1 = 0.001
+anc_slope2 = -0.001
+
+## this function takes the value of a pixel and the values of your parameters and returns the intensity at a given point
+get_intensity(x=2321, opt=anc_optimum, slope1=anc_slope1, slope2=anc_slope2, intensity_at_opt=10)
+
+# Calculate the true niche model
+x = seq(env_min, env_max, 1)
+y = get_intensity2(x=x, opt=anc_optimum, slope1=anc_slope1, slope2=anc_slope2, intensity_at_opt=10)
+
+p_y = inv.logit(y)
+
+# Plot the true niche model, and true suitability
+plot(x, y, main="Intensity by niche value", xlab="niche value")
+plot(x, p_y, main="Relative suitability by niche value", xlab="niche value")
+```
+Simulate a tree - you need phylo to work for this part
+```{r, warning = F, message = F, eval = F}
+library(ape)
+
+seedval = 12345
+birthRate = 0.3
+deathRate = 0.1
+tr = rphylo(n=20, birth=birthRate, death=deathRate, T0=50)
+length(tr$tip.label)
+plot(tr)
+title("Simulated tree")
+axisPhylo()
+
+# Simulate their niche evolution
+optima_at_tips = fastBM(tree=tr, a=anc_optimum, mu=0, sig2=10000, bounds=c(env_min, env_max))
+optima_at_tips
+
+slope1_at_tips = fastBM(tree=tr, a=anc_slope1, mu=0, sig2=0.01, bounds=c(0, 100))
+slope1_at_tips
+
+slope2_at_tips = fastBM(tree=tr, a=anc_slope2, mu=0, sig2=0.01, bounds=c(-100, 0))
+slope2_at_tips
+```
+Plot the intensities at the tips
+```{r, warning = F, message = F}
+pdffn = "simulated_ENMs_v1.pdf"
+pdf(file=pdffn, width=6, height=6)
+par(mfrow=c(2,1))
+numtips = length(tr$tip.label)
+for (i in 1:numtips)
+	{
+	tmpname = names(optima_at_tips)[i]
+	title1 = paste0(tmpname, ": intensity (logit(P))")
+	title2 = paste0(tmpname, ": relative suitability (P)")
+
+	# Calculate the true niche model
+	x = seq(env_min, env_max, 1)
+	y = get_intensity2(x=x, opt=optima_at_tips[i], slope1=slope1_at_tips[i], slope2=slope2_at_tips[i], intensity_at_opt=10)
+
+	p_y = inv.logit(y)
+
+	# Plot the true niche model, and true suitability
+	plot(x, y, main=title1, xlab="niche value")
+	plot(x, p_y, main=title2, xlab="niche value")
+	} # END for (i in 1:numtips)
+dev.off()
+cmdstr = paste0("open ", pdffn)
+system(cmdstr)
+```
+We can calculate the true intensties for each pixel, given the mode, so let's simulate occurrences on that basis
+```{r, warning = F, message = F}
+pdffn = "simulated_ENMs_maps_v1.pdf"
+pdf(file=pdffn, width=12, height=6)
+par(mfrow=c(1,3))
+
+num_occs_per_species_per_Pgt50 = rep(10, times=numtips)
+Pgt50 = 20733
+
+dims = dim(env$pc1)
+numrows = dims[1]
+numcols = dims[2]
+length(vals$pc1)
+
+indices_list = NULL
+vals_list = NULL
+coords_list = NULL
+ones_list = NULL
+zeros_list = NULL
+```
+```{r, warning = F, message = F, eval = F}
+for (i in 1:numtips)
+	{
+	cat(i, " ", sep="")
+	#intensity_per_pixel = sapply(X=vals$pc1, FUN=get_intensity, opt=optima_at_tips[i], slope1=slope1_at_tips[i], slope2=slope2_at_tips[i], intensity_at_opt=10)
+	intensity_per_pixel = get_intensity2(x=vals$pc1, opt=optima_at_tips[i], slope1=slope1_at_tips[i], slope2=slope2_at_tips[i], intensity_at_opt=10)
+	num_pixels_w_P_gt_0 = sum(intensity_per_pixel > 0)
+	num_pixels_w_P_gt_0
+	
+	num_pixels_to_sample = ceiling(num_occs_per_species_per_Pgt50[i]/Pgt50 * num_pixels_w_P_gt_0)
+	
+	# Sample some pixels, with replacement
+	P_per_pixel = inv.logit(intensity_per_pixel)
+	P_per_pixel2 = P_per_pixel / sum(P_per_pixel)
+	grid_indices = 1:length(vals$pc1)
+	grid_indices_sampled = sample(x=grid_indices, size=num_pixels_to_sample, replace=TRUE, prob=P_per_pixel2)
+	vals_sampled = vals$pc1[grid_indices_sampled]
+	
+	xys = index_to_rowcolnums(index=grid_indices_sampled, numrows=numrows, numcols=numcols)
+	
+	latlongs = xyFromCell(object=env$pc1, cell=grid_indices_sampled, spatial=TRUE)
+
+
+	x = seq(env_min, env_max, 1)
+	y = get_intensity2(x=x, opt=optima_at_tips[i], slope1=slope1_at_tips[i], slope2=slope2_at_tips[i], intensity_at_opt=10)
+
+	p_y = inv.logit(y)
+```
+Plot the true niche model, and true suitability
+```{r, warning = F, message = F}
+	plot(x, y, main=title1, xlab="niche value")
+	plot(x, p_y, main=title2, xlab="niche value")
+	
+	plot(env$pc1)
+	points(x=latlongs$x, y=latlongs$y)
+	
+	
+	indices_list[[i]] = grid_indices_sampled
+	vals_list[[i]] = vals_sampled
+	ones_list[[i]] = rep(1, length(vals_sampled))
+	zeros_list[[i]] = rep(0, length(vals_sampled))
+	
+	coords_list[[i]] = as.data.frame(latlongs, stringsAsFactors=FALSE)
+	}
+dev.off()
+cmdstr = paste0("open ", pdffn)
+system(cmdstr)
+
+
+out_txtfn = "RB_load_data.txt"
+#write(x="", file=out_txtfn, append=FALSE)
+```
+
+```{r, warning = F, message = F, eval = F}
+for (i in 1:numtips)
+	{
+	tmpname = names(optima_at_tips)[i]
+	
+	zeros_ones_list = zeros_list
+	zeros_ones_list[[i]] = ones_list[[i]]
+	PA_data = unlist(zeros_ones_list)
+	vals_data = unlist(vals_list)
+	
+	response_table = cbind(PA_data, vals_data)
+	response_table = as.data.frame(response_table, stringsAsFactors=FALSE)
+	names(response_table) = c("PA", "pc1")
+	outfn = paste(tmpname, "_PAdata.txt", sep="")
+	write.table(response_table, file=outfn, sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE)
+	
+	PA_string = paste0(PA_data, sep="", collapse=", ")
+	PA_string2 = paste0(tmpname, "_PAdata <- v(", PA_string, ")")
+	PA_string2
+	
+	pc1_string = paste0(vals_data, sep="", collapse=", ")
+	pc1_string2 = paste0(tmpname, "_pc1data <- v(", pc1_string, ")")
+	pc1_string2
+	
+	out_txtfn = paste0(tmpname, "_PAdata.txt")
+	#write(x=PA_string2, file=out_txtfn, append=FALSE)
+
+	out_txtfn = paste0(tmpname, "_pc1data.txt")
+	#write(x=pc1_string2, file=out_txtfn, append=FALSE)
+	}
+```
