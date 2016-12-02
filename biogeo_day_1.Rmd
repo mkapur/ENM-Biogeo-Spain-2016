@@ -7,14 +7,12 @@ output:
   html_notebook:
     toc: yes
 ---
-
-
 ## PART I: R STUDIO TOUR<Br>
 #### <a href = 'https://drive.google.com/file/d/0B0goXsJkrNrGOXFpbDA4TjM3X2c/view?usp=sharing'>Click here to check out Lasting Data Analysis (pdf)</a href> - a short guide to good data management and coding practices.
 <a href = 'http://phylo.wikidot.com/transsci#toc0'>Here's a link</a href> to Nick Matzke's R tutorial (it's buried within the Intro to ML/Phylogenies) online. He was supposed to teach this course but missed his flight.
 
 #### Functions - just a brief overview here. See Part IV for writing functions.
-```{r}
+```{r, warning = F, message = F}
 ## A function is a little machine. The input goes in parentheses:
 seq(1,10)
 print('hello')
@@ -282,7 +280,7 @@ paste("The max is ",max(mean(x),sd(x)))
 ```{r, warning = F, message = F}
 #install.packages('ape')
 library(ape)
-# require(GGally)
+require(GGally)
 data("carnivora")
 ggpairs(carnivora[,6:10]) ## the Species column has too many levels
 ## get means of columns 6 thru 12, but only for Canids (family = Canidae)
