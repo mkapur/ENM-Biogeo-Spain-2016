@@ -9,7 +9,7 @@ output:
 ##<span style="color:#0040FF"> MORNING SESSION - Dan Warren</span>
 
 ### *Ecological Niche Modeling == Species Distribution Modeling*. "Create something useful with the data we can get."<Br></b>
-#### <a href = https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf'> Haz clic aqui </a href> for the SDM Vignette (tutorial) in dismo from CRAN.<br>
+#### <a href = https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf> Haz clic aqui </a href> for the SDM Vignette (tutorial) in dismo from CRAN.<br>
 These are methods for working with species occurrences and environmental factors (both with a spatial component). We use point data to extract environmental conditions where we've observed species; and we create a model to describe the probability of observing that species giving those conditions. The result is an estimate of the species' niche in the form of a mathematical model. We then use that model to project/predict the species' distribution (as a function of habitat suitability) across a geographic range. They're not ideal for establishing tolerance extremes.<Br><br>
 <b>Advantages:<br></b>
   1. large availability of data <br>
