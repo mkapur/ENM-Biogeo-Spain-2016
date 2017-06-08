@@ -1,15 +1,15 @@
 ---
 title: "Ecological & Evolutionary Biogeography Day 1: Intro to R"
 instructor: Dan Warren - Macquarie Univeristy
-author: <a href = 'http://www.maiarkapur.wordpress.com'>Maia Kapur</a href>
+author: <a href = 'http://www.maiarkapur.wordpress.com'>Maia Kapur</a>
 date: 28 Nov 2016 - Barcelona, Spain
 output: 
   html_notebook:
     toc: yes
 ---
 ## PART I: R STUDIO TOUR<Br>
-#### <a href = 'https://drive.google.com/file/d/0B0goXsJkrNrGOXFpbDA4TjM3X2c/view?usp=sharing'>Click here to check out Lasting Data Analysis (pdf)</a href> - a short guide to good data management and coding practices.
-<a href = 'http://phylo.wikidot.com/transsci#toc0'>Here's a link</a href> to Nick Matzke's R tutorial (it's buried within the Intro to ML/Phylogenies) online. He was supposed to teach this course but missed his flight.
+#### <a href = 'https://drive.google.com/file/d/0B0goXsJkrNrGOXFpbDA4TjM3X2c/view?usp=sharing'>Click here to check out Lasting Data Analysis (pdf)</a> - a short guide to good data management and coding practices.
+<a href = 'http://phylo.wikidot.com/transsci#toc0'>Here's a link</a> to Nick Matzke's R tutorial (it's buried within the Intro to ML/Phylogenies) online. He was supposed to teach this course but missed his flight.
 
 #### Functions - just a brief overview here. See Part IV for writing functions.
 ```{r, warning = F, message = F}
@@ -127,7 +127,7 @@ x[,3] * 5 ## this will tell you what happens when column 3 of x is multiplied by
 x[,3] <- x[,3] * 5 ## this ACTUALLY changes column three to be multiplied by 5. nothing really changes until you do the assignment.
 ```
 ## PART III: DATA FRAMES<Br>
-#### **A matrix has to have only one class within it -- you can't have a mix of class(character) and class (numeric) -- but you can have both letters and numbers in a data frame. If you DO concactenate letters and numbers into a matrix, it will just coerce everything to the same class, typically character. This is undesirable, so we work with data frames. See below**.
+#### **A matrix has to have only one class within it -- you can't have a mix of class(character) and class (numeric) -- but you can have both letters and numbers in a data frame. If you DO concactenate letters and numbers into a matrix, it will just coerce everything to the same class, typically character. This is undesirable, so we work with data frames. See below.
 ```{r, message = F, warning = F}
 col1 = c(1,2,3) ## numeric
 col2 = c('cheese','pickles','tomato') ## characters
