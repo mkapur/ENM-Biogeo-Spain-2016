@@ -2,6 +2,9 @@
 Thumbs.db
 ehthumbs.db
 
+# notebooks
+*.nb
+
 # Folder config file
 Desktop.ini
 
