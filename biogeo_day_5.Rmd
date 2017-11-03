@@ -6,22 +6,22 @@ output:
   html_notebook: 
     toc: yes
 ---
-## <span style="color:#0040FF"> MORNING SESSION pt I - Nick Matzke</span>
+# MORNING SESSION pt I - Nick Matzke
 <br>
-<span style="color:#B40431"> <B>Note: Per his request, Nick's material used to execute the code for today will NOT be offered on Github with this tutorial. Workshop members downloaded the zipfile and distance.txt files in class. </span></b>
+ Note: Per his request, Nick's material used to execute the code for today will NOT be offered on Github with this tutorial. Workshop members downloaded the zipfile and distance.txt files in class.  
 
-### Trait-based (trait depedent) biogeography models
+##  Trait-based (trait depedent) biogeography models
 Much of the discussed work published yet, but he has the code.<Br>
 Snoring rail: flightless bird that lost ability of flight due to lack of predators in newly colonized areas. Our methods don't do the best job of dealing with this sort of parallel trait extinction -- in fact, <b> they all leave out traits!</b>
 <br><Br>
 All prev. discussed models assume dispersal rate is constant, but we know that traits aer crucial to seed dispersal, rafting ability, flight, etc. Many traits are adaptive in local ecology & relate to dispersal, but they may not help you in very rare, global cases. <Br><Br>
-<span style="color: #8A0829"> 
+ 
 
-#### Case study: Pacific Rails<Br></span>
+##  Case study: Pacific Rails<Br>
 Nick narrowed this down to 12-13 areas. The std. trait model would suggest that flight re-evolved many times. We add in traight flight on tree parameters of model, which include a rate of flight loss, flight gain, and a multiplier on dispersal probabilities while flightless (could decrease dispersal probability). Essentially, we just build on the features of biogeoBEARS. Nick ran several types of several models to get parameter estimates.<Br><Br>
 Check out package <b> archipelago() </b> by Jeet Sukumaran. This has you forward simulate many histories, and pick the ones that match your data. Pretty inefficient, but really flexible.
 
-### Cryptoblepharus lizards
+## Cryptoblepharus lizards
 Here we work with adding in traits to BioGeoBEARS. This hasn't been published yet, and the trait-inclusion code isn't finalized but he lets us use it here.<br><Br> 
 We downloaded files in class from here (they may no longer be available): http://phylo.wikidot.com/transsci<Br><br>
 You have to manipulate some of the code to refer to your directory. You'll notice that the first bit of this code is identical to what we did on Day 4 to get BioGeoBEARS up & running; extensive annotation for those setup steps are available there. This part was sourced from the file <b> M4_DEC+J+t12+t21+x_m2free_optimxFinal_v1.R. & DEC+J</b> downloaded in class. <Br>
@@ -96,7 +96,7 @@ source("_matrix_utils_v1.R")
 # calc_loglike_sp = compiler::cmpfun(calc_loglike_sp_prebyte)    # crucial to fix bug in uppass calculations
 # calc_independent_likelihoods_on_each_branch = compiler::cmpfun(calc_independent_likelihoods_on_each_branch_prebyte)
 ```
-### Load Geography and Tree Files & Run DEC_J
+Load Geography and Tree Files & Run DEC_J
 Make sure you download the distances file from the site. All the other files referenced are available in the zip file - which I just droped into my working directory.
 ```{r, warning=F,message=F}
 # SETUP: YOUR TREE FILE AND GEOGRAPHY FILE
@@ -178,7 +178,7 @@ BioGeoBEARS_run_object$max_range_size = max_range_size
 BioGeoBEARS_run_object$min_branchlength = 0.000001    # Min to treat tip as a direct ancestor (no speciation event)
 BioGeoBEARS_run_object$include_null_range = TRUE    # set to FALSE for e.g. DEC* model, DEC*+J, etc.
 # (For DEC* and other "*" models, please cite: Massana, Kathryn A.; Beaulieu, 
-#  Jeremy M.; Matzke, Nicholas J.; O’Meara, Brian C. (2015). Non-null Effects of 
+#  Jeremy M.; Matzke, Nicholas J.; O'Meara, Brian C. (2015). Non-null Effects of 
 #  the Null Range in Biogeographic Models: Exploring Parameter Estimation in the 
 #  DEC Model. bioRxiv,  http://biorxiv.org/content/early/2015/09/16/026914 )
 # Also: search script on "include_null_range" for other places to change
@@ -488,7 +488,7 @@ if (runslow)
     resDECj = res
     }
 ```
-###Plotting
+### Plotting
 
 Collapse joint probabilities to geography probabilities for plotting
 ```{r}
@@ -610,7 +610,7 @@ dev.off()  # Turn off PDF
 cmdstr = paste("open ", pdffn, sep="")
 system(cmdstr) # Plot it
 ```
-## <span style="color:#0040FF"> MORNING SESSION pt II - Dan Warren</span>
+# MORNING SESSION pt II - Dan Warren 
 <br>
 *Note: Dan will do package RWTY demo tonight at dinner for interested parties. Random Forests now available in ENMTools as of last night. Dropbox now has example for how clade object was built.*
 
@@ -649,7 +649,7 @@ ib.bg <- enmtools.ecospat.bg(monticola, cyreni,
 ```{r, warning = F, message = F, fig.height = 8, fig.width = 8}
 ib.bg
 ```
-### <b> Dan's Evolution in Niche Modeling Lecture </b>
+##   Dan's Evolution in Niche Modeling Lecture 
 Evolution species models useful for studying species distribution models -- can be used to enhance them too. It can help us deal with problems in the data. <Br><Br>
 Niche conservatism was basis for identity and background tests, but a primary finding is that the closer two species are evolutionarily, the closer they are in terms of their environmental tolerances. This is useful - because if two different species have two similar tolerances (niche), they may be restricted to different subsets of that niche.  We can then take data from both together and therefore get a better sampling of the entire range that those species can tolerate. *Dan's slide showed stronger model outcomes when more of the sampling space is included by replacing 1/2 the data points for one species with a sister species*. In this way, using only one species can result in a good distribuion model, but a poor niche model -- crucial for questions in climate change. You <b> must model niches at the correct taxonomic scale -- the ecological truth may be that multiple mountaintops are fine for species only found on one!</b>
 <Br><Br>
@@ -705,14 +705,14 @@ visualize.enm(model = ib.moses$combined.glm, env = euro.worldclim, layers = c('b
 
 Get away from the idea that the AUC score or Kappa is the #1. Don't be obsessed with discrimination accuracy. Maybe we should value biological insight -- not just precision of prediction! So sometimes a model may overpredict a distribution, and that should be OK.
 
-## <span style="color:#0040FF"> AFTERNOON SESSION - Nick Matzke</span>
-### Nick's talk about what he's up to nowadays. 
+# AFTERNOON SESSION - Nick Matzke 
+## Nick's talk about what he's up to nowadays. 
 In phylogenetic niche conservatism, an idea housed in phyloclim is taking models fit to different species and retun complex curves (across a predictor) for living species. Then use these to estimate ancestral preferences by taking the mean. A niche model could alternatively take distributions with Brownian motion of min-max niche range. (This is probably the most sophisticated approach so far).
 <Br><br>
 <b>Unsolved problem</b>: how are niches homologous? Meaning, if a model is more complex than just a min and a max, what is the complex dynamic underlying those preferences? Each species could have something as simple as two slopes and an optimum point (three parameters) describing their niche for a given relationship. <br><br>
 He proposes <B> PhyloSDM </b>having 3 params per species per variable, and added in evolutionary pameters. But the advantage is that it would use faster, traditional heuristic searches. We'd still need to think up the evaluation metrics.Currently being programmed in JAGS/R2JAGS. MCMC Methods.
 
-### A brief demo of PhyloSDM
+## A brief demo of PhyloSDM
 Note: we downloaded a test data file in class, testdata.zip .<br>
 GOAL: simulate some niche evolution. The species ranges will really, truly, be completely controlled by their niche preference in the variable pc1. <br>
 Dataset: env pc1-pc4 from Cuba, in Dan Warren's ENMtools dataset. Dan Warren's ENMTools package in R: https://github.com/danlwarren/ENMTools
@@ -734,7 +734,7 @@ source("http://phylo.wdfiles.com/local--files/transsci/phyloENM_sims_v1.R")
 #setwd(wd)
 ```
 
-# Read in some environmental data
+ Read in some environmental data
 ```{r, warning = F, message = F}
 env.files <- list.files(path = "testdata/", pattern = "pc", full.names = TRUE)
 env <- stack(env.files)
@@ -892,7 +892,7 @@ Plot the true niche model, and true suitability
 	zeros_list[[i]] = rep(0, length(vals_sampled))
 	
 	coords_list[[i]] = as.data.frame(latlongs, stringsAsFactors=FALSE)
-	}
+	
 dev.off()
 cmdstr = paste0("open ", pdffn)
 system(cmdstr)

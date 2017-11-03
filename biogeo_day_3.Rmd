@@ -6,10 +6,14 @@ output:
   html_notebook: 
     toc: yes
 ---
-##<span style="color:#0040FF"> MORNING SESSION - Dan Warren</span>
+# MORNING SESSION - Dan Warren 
 
-### Ecological Niche Modeling == Species Distribution Modeling*. "Create something useful with the data we can get."<Br>
-#### <a href = https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf> Haz clic aqui for the SDM Vignette (tutorial) in dismo from CRAN.<br></a>
+## Ecological Niche Modeling == Species Distribution Modeling
+
+"Create something useful with the data we can get."<Br>
+
+ SDM Vignette (tutorial) in dismo from CRAN: https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf
+ 
 These are methods for working with species occurrences and environmental factors (both with a spatial component). We use point data to extract environmental conditions where we've observed species; and we create a model to describe the probability of observing that species giving those conditions. The result is an estimate of the species' niche in the form of a mathematical model. We then use that model to project/predict the species' distribution (as a function of habitat suitability) across a geographic range. They're not ideal for establishing tolerance extremes.<Br><br>
 <b>Advantages:<br></b>
   1. large availability of data <br>
@@ -98,7 +102,7 @@ plot(ibm.bc.pred, main = 'sdm predictions using bioclim')
 ## add in the same points from above. cex makes the points smaller.
 points(ibm[,c('lon','lat')], pch = 16, cex = 0.25)
 ```
-#### There is an alternative to bioclim called <span style="color:#7401DF">domain()</span> that does a similar process. Repeat the above steps to make a model and plot it using domain. These are both profile methods, that only require presence data.
+There is an alternative to bioclim called `domain()` that does a similar process. Repeat the above steps to make a model and plot it using domain. These are both profile methods, that only require presence data.
 ```{r, fig.height = 7, fig.width = 7, warning = F, message = F}
 ibm.d <- bioclim(spain.worldclim, ibm[,c('lon','lat')])
 par(mfrow = c(4,4))
@@ -254,11 +258,11 @@ plot(predict(spain.worldclim, ibm.glm, type = 'response'))
 *"Some models are wrong AND useless, and we need to find a way to pick a useful model". *<br><Br>You have to think about what you want your models to represent. If we just wanted a spatial prediction, we could do it with crayons -- just a generalization of where it occurs. But we couldn't use this to predict effects of climate change or the future in general, because you don't know the degree to which what traits influence that distribution. We assume that this relationship between environment and presence is conserved (current frog is similar to future frog).<Br><Br>
 There is an inherent problem with any AUC measure where all presences are coded a higher score than all absences -- regardless of the shape of the model.<br><br>
 <B>*If you don't want to sleep at night, think of the fact that folks are using these types of models to predict the spread of Ebola, and there's no way to tell that what they're doing is so wrong.*</b><br><Br>
-### Due to the nature of the data, we will always suck. But just try to suck less. 
+Due to the nature of the data, we will always suck. But just try to suck less. 
 <Br><br><Br>
 
-## <span style="color:#0040FF"> AFTERNOON SESSION - Dan Warren</span>
-### Working with ENMTools
+# AFTERNOON SESSION - Dan Warren
+## Working with ENMTools
 DL Warren's Github & Vignette where the ENMTools is sourced at https://github.com/danlwarren/ENMTools.
 Here is the ENMTools blog: http://enmtools.blogspot.com.es/ <br> 
 Models require a homogeneous wrapper for modeling approaches that integrates bioclim, maxent, glm and other modeling approaches -- this requires a data input that ENMTools can use to execute them all together. These are done in the enmtools.species objects, which contain precense.points, background.points, species.names, range (a raster) and others. Each object is in a list -- which helps you quickly feed your data into various modeling frameworks.
@@ -338,7 +342,7 @@ visualize.enm(model = monticola.gam,
 # f = pres ~ s(bio1, k = 20) + s(bio12, k = 20), test.prop = 0.2)
 # visualize.enm(model = monticola.gam2, layers = c("bio1","bio12"), env =  spain.worldclim)
 ```
-### <span style="color:#8000FF">Using MaxEnt in ENMTools<b>
+## Using MaxEnt in ENMTools
 You need the maxent.jar file installed in the R Win library,</b> but you will use the following syntax.
 ```{r, warning = F, message = F, eval = F, include = T}
 monticola.mx <- enmtools.maxent(species = monticola,
@@ -346,7 +350,7 @@ monticola.mx <- enmtools.maxent(species = monticola,
 monticola.mx$model ## this will open MaxEnt's HTML file!!
 visualize.enm(monticola.mx, env = spain.worldclim, layers = c('bio15','bio16'))
 ```
-## </b>Calculating Metrics and other Final Diagnostics
+##  Calculating Metrics and other Final Diagnostics
 
 In ecological biogeography, we are asking WHY species tolerate certain traits. We don't necessarily have to assume that the models are accurate to answer questions about similarities between two populations. We just need differences and similarities between models to be accuarate -- that the differences between models are informative of the difference between niches.<Br><br><B>
 Problems with these assumptions:<Br><Br></b>
@@ -386,7 +390,7 @@ How does our outcomes modify what we expect to see? We need a way to estimate a 
 ### Niche Conservatism
 We test by looking at our real occurence points and measure overlap between others -- then we switch out the identity of the species and compare.
 
-### Niche Identity - <B> working with clade data </b>
+### Niche Identity: working with clade data 
 ```{r}
 load("C:/Users/M Kapur/Downloads/iberolacerta.clade.Rd")
 class(iberolacerta.clade)

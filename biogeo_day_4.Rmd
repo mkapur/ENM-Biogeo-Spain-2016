@@ -19,7 +19,8 @@ output:
 2. Bayesian approaches (not really covered today)
 <Br>
 This will involve an intro to R for phylogenies, a lecture about biogeography, then move on to working with BioGeoBEARS to work with more complex models in palaeogeography, including distance, traits, and more.
-### CHAPTER 5: MAKE YOUR OWN FUNCTIONS, AND DO MAXIMUM LIKELIHOOD
+
+CHAPTER 5: MAKE YOUR OWN FUNCTIONS, AND DO MAXIMUM LIKELIHOOD
 The ML assumption is that priors don't matter; all that is taken to matter is data.
 ```{r, message = F, warning = F}
 ## R has many good functions, but it is easy to make your own!  In fact, this is necessary for some applications. Let's consider some coin-flip data.Here are 100 coin flips:
