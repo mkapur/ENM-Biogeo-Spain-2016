@@ -4,6 +4,7 @@ ehthumbs.db
 
 # notebooks
 *.nb
+*.html
 
 # Folder config file
 Desktop.ini
