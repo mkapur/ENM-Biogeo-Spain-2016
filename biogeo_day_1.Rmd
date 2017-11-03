@@ -7,11 +7,11 @@ output:
   html_notebook:
     toc: yes
 ---
-## PART I: R STUDIO TOUR<Br>
-#### <a href = 'https://drive.google.com/file/d/0B0goXsJkrNrGOXFpbDA4TjM3X2c/view?usp=sharing'>Click here to check out Lasting Data Analysis (pdf)</a> - a short guide to good data management and coding practices.
+# PART I: R STUDIO TOUR<Br>
+<a href = 'https://drive.google.com/file/d/0B0goXsJkrNrGOXFpbDA4TjM3X2c/view?usp=sharing'>Click here to check out Lasting Data Analysis (pdf)</a> - a short guide to good data management and coding practices.
 <a href = 'http://phylo.wikidot.com/transsci#toc0'>Here's a link</a> to Nick Matzke's R tutorial (it's buried within the Intro to ML/Phylogenies) online. He was supposed to teach this course but missed his flight.
 
-#### Functions - just a brief overview here. See Part IV for writing functions.
+## Functions - just a brief overview here. See Part IV for writing functions.
 ```{r, warning = F, message = F}
 ## A function is a little machine. The input goes in parentheses:
 seq(1,10)
@@ -19,7 +19,7 @@ print('hello')
     ## > this symbol means a new line of code
     ## + this means that R is waiting for you to say something. Typically you will forget to add a close-parentheses, hit enter, and the little plus will show up. You can either add in whatever you were missing, or hit ESC to get the ">" back.
 ```
-#### Packages - for more functions
+## Packages - for more functions
 ```{r, warning = F, message = F}
 #' Install using install.packages("packageName"). Load these using library(packageName) -- You must already have these installed to load, which you can check out using the 'Packages' tab in the bottom-right hand window. 
 
@@ -31,16 +31,19 @@ numbers <- rnorm(1000)
 qplot(numbers)
 ## runif(1000) is a similar function that produces a UNIForm distribution as opposed to a NORMal one.
 ```
-#### Help Files - should be provided for every package/function in R
-##### In RStudio you can use the tab keys after writing a function to remind yourself what you can put into that function. Another tip is to type a question mark before the function's name which will pop up the HELP window in the bottom-right. In the window, you'll see each term that the function will accept, and a quasi-informative description of how that input was designed when someone created it. Scroll dow and it should tell you what each argument (input) means.
+Help Files - should be provided for every package/function in R. <br>
+
+In RStudio you can use the tab keys after writing a function to remind yourself what you can put into that function. Another tip is to type a question mark before the function's name which will pop up the HELP window in the bottom-right. In the window, you'll see each term that the function will accept, and a quasi-informative description of how that input was designed when someone created it. Scroll dow and it should tell you what each argument (input) means.
 ```{r, warning = F, message = F}
 ?rnorm
 help(rnorm) ## does the same thing
 ??rnorm ## double question marks will do a "search" for functions that contain that term - useful if you don't know the name of the function exactly.
 ## In the console window, put the mouse cursor on the function (e.g. "source") and hit F1 to get help
 ```
-## PART II: ASSIGNING VARIABLES AND CLASSES <Br>
-#### Variables: A small piece of information, assigned using the = or <- symbols. Once you assign a variable, they should pop up in your environment tab.  Technically, the <- symbol is the assignment operator, and there are many who feel this is superior to the equals sign. In general, it avoids confusion. Don't confuse = with ==. The latter asks "is equal to?"
+#  PART II: ASSIGNING VARIABLES AND CLASSES <Br>
+## Variables
+
+A small piece of information, assigned using the = or <- symbols. Once you assign a variable, they should pop up in your environment tab.  Technically, the <- symbol is the assignment operator, and there are many who feel this is superior to the equals sign. In general, it avoids confusion. Don't confuse = with ==. The latter asks "is equal to?"
 ```{r, message = F, warning = F}
 x = 8
 x == 9
@@ -52,8 +55,9 @@ x = x + y
 ## Now x is 18, and you've overwritten the previous instance of x as 8.
 ## The function objects() will return whatever is in your environment tab into the console for you to check out.
 ```
-#### The class  is the 'type' of your variable. <br> 
-##### You can find out what type (class) your variable is by using the class() function. This is important because certain functions will only accept given classes, for example, you can't add together two words (class character) class(x) should return numeric.In this mini-example, you've tricked R into thinking that T is the number 4, then you later ask if 3 'is equal to' T, for which it returns F (correctly). But if later you wanted to find out if a column of data had  T or F (say, from a survey), you'd be in trouble, since R wouldn't be reading in 'T' as TRUE, but as the number 4!! In general, if you mess this up, use rm() to remove whatever you've done. **When you first start out, class errors will account for many code breaks. Make sure you're feeding functions the right type of data and/or variables, otherwise you'll get an error**.
+The class  is the 'type' of your variable. <br> 
+
+You can find out what type (class) your variable is by using the class() function. This is important because certain functions will only accept given classes, for example, you can't add together two words (class character) class(x) should return numeric.In this mini-example, you've tricked R into thinking that T is the number 4, then you later ask if 3 'is equal to' T, for which it returns F (correctly). But if later you wanted to find out if a column of data had  T or F (say, from a survey), you'd be in trouble, since R wouldn't be reading in 'T' as TRUE, but as the number 4!! In general, if you mess this up, use rm() to remove whatever you've done. **When you first start out, class errors will account for many code breaks. Make sure you're feeding functions the right type of data and/or variables, otherwise you'll get an error**.
 ```{r, message = F, warning = F, eval = F}
 x = 'super classy'
 y = 10
@@ -87,7 +91,7 @@ x[c(2,5,6)]
 wanted = c(2,5,6)
 x[wanted]
 ```
-#### Working with vectors and naming columns.
+## Working with vectors and naming columns.
 ```{r, message = F, warning = F, eval = FALSE}
 ## c() is how you concatenate together a bunch of things, like numbers, to create a vector.
 x = c(7,5,4,8,3,1)
@@ -104,7 +108,7 @@ names(y) = c("eeny","meeny","hermione","moe","catch","a")
 y[c('eeny')] 
 
 ```
-#### Multi-dimensional data - more indexing in matrices. 
+## Multi-dimensional data - more indexing in matrices. 
 ```{r, message = F, warning = F, eval = F}
 ## creating a matrix - you won't do this too often
 col1 = c(1,2,3)
@@ -126,8 +130,9 @@ x['r2','col3']
 x[,3] * 5 ## this will tell you what happens when column 3 of x is multiplied by 5
 x[,3] <- x[,3] * 5 ## this ACTUALLY changes column three to be multiplied by 5. nothing really changes until you do the assignment.
 ```
-## PART III: DATA FRAMES<Br>
-#### **A matrix has to have only one class within it -- you can't have a mix of class(character) and class (numeric) -- but you can have both letters and numbers in a data frame. If you DO concactenate letters and numbers into a matrix, it will just coerce everything to the same class, typically character. This is undesirable, so we work with data frames. See below.
+# PART III: DATA FRAMES<Br>
+
+A matrix has to have only one class within it -- you can't have a mix of class(character) and class (numeric) -- but you can have both letters and numbers in a data frame. If you DO concactenate letters and numbers into a matrix, it will just coerce everything to the same class, typically character. This is undesirable, so we work with data frames. See below.
 ```{r, message = F, warning = F}
 col1 = c(1,2,3) ## numeric
 col2 = c('cheese','pickles','tomato') ## characters
@@ -156,7 +161,7 @@ sandwich.list = list(sandwich.df = x,
 sandwich.list
 
 ```
-#### Loading in the Coffee dataset (from the course Dropbox)
+Loading in the Coffee dataset (from the course Dropbox)
 ```{r}
 setwd('C:/Users/M Kapur/Downloads/') ## the path to whereve you save stuff -- this becomes your default
 list.files() ## will tell you what's in there
@@ -191,8 +196,8 @@ teachA.fems3 = subset(fems, teacher == 'A')
 coffee.df[coffee.df[,'gender'] == 'F' & coffee.df[,'teacher'] == 'A',]
 subset(coffee.df, gender == 'F' & teacher == 'A')
 ```
-## PART IV: FUNCTIONS <Br>
-#### Functions - a way to customize your own Data Factory. This can be used to automate lots of processes you'd otherwise have to replicate "by hand".
+# PART IV: FUNCTIONS FOR REAL <Br>
+Functions - a way to customize your own Data Factory. This can be used to automate lots of processes you'd otherwise have to replicate "by hand".
 ```{r}
 #' You declare a function using the function() call. What is in the parenthesis designates how many inputs it accepts, and what's in between the curly brackets does the actual procedure performed on those input(s)
 my.function <- function(my.input){
@@ -226,7 +231,7 @@ add.three = function(x,y,z){
 add.three(4,3,22) ## this will give you an error if you provide more or less than 3 inputs
 
 ```
-#### Creating a function using the Attitude Dataset
+Creating a function using the Attitude Dataset
 ```{r}
 # require(GGally)
 # require(ggplot2)
@@ -270,13 +275,13 @@ max(mean(x),sd(x))
 paste("The max is ", 2) ## just throws whatever you put in into a script. We can use this to summarize outputs. You can input functions in here & separate items with commas.
 paste("The max is ",max(mean(x),sd(x)))
 ```
-#### *In class, Dan saved the **attitude function** setup into a new, standalone R script. He then cleared his workspace and loaded that function using SOURCE. I've copied this code below. This makes it so you don't have infintiely long scripts with your functions written out every time. If you come up with a function that you're using a lot, it's smart to make a unique file for that function and save it. *
+*In class, Dan saved the **attitude function** setup into a new, standalone R script. He then cleared his workspace and loaded that function using SOURCE. I've copied this code below. This makes it so you don't have infintiely long scripts with your functions written out every time. If you come up with a function that you're using a lot, it's smart to make a unique file for that function and save it. *
 ```{r}
 ## source() reads in a file as if you just sat down and wrote it in
 ## rm(ls)
 ## source(processAttitude.R)
 ```
-## PART V. More functions with Ape.
+# PART V. More functions with Ape.
 ```{r, warning = F, message = F}
 #install.packages('ape')
 library(ape)
@@ -311,8 +316,8 @@ carnivora[carnivora[,'SW'] > 20,c('Species','Family')]
 ## shorthand with unique() and subset()
 unique(subset(carnivora, SW > 20)[,c('Species','Family')])
 ```
-## PART V.5 IF STATEMENTS 
-#### Here we're leveraging the TRUES and FALSES. These look like functions, because they have curly brackets. Basically the if() function evaluates whatever is in parenthesis; if that returns TRUE, it does whatever's inside the curlies. If the statement is FALSE, nothing happens OR you can tell it to do something ELSE with an ELSE statement.
+# PART 6 IF STATEMENTS 
+Here we're leveraging the TRUES and FALSES. These look like functions, because they have curly brackets. Basically the if() function evaluates whatever is in parenthesis; if that returns TRUE, it does whatever's inside the curlies. If the statement is FALSE, nothing happens OR you can tell it to do something ELSE with an ELSE statement.
 ```{r}
 x = 4
 if(x == 5){
