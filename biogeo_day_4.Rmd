@@ -6,14 +6,15 @@ output:
   html_notebook: 
     toc: yes
 ---
-## <span style="color:#0040FF"> MORNING SESSION - Nick Matzke</span>
+# MORNING SESSION - Nick Matzke 
 
-#### <a href = http://phylo.wikidot.com/transsci'> Click Here </a href> for Nick's Phylo Wiki page for this class - the code shown here is downloaded from both the Spatial Data and ML/Phylogenies exercises.<br>
-#### <a href = http://phylo.wikidot.com/2014-summer-research-experiences-sre-at-nimbios-for-undergra'> Click Here </a href> for the NIMBIOS code tutorial which we copied for this exercise. I have gone through and added in more notes based on his lecture and the code setup.<br>
+ Nick's Phylo Wiki page for this class - the code shown here is downloaded from both the Spatial Data and ML/Phylogenies exercises: http://phylo.wikidot.com/transsci <br>
+ NIMBIOS code tutorial which we copied for this exercise: http://phylo.wikidot.com/2014-summer-research-experiences-sre-at-nimbios-for-undergra
+ I have gone through and added in more notes based on his lecture and the code setup.<br>
 
-(For DEC* and other "*" models, please cite: Massana, Kathryn A.; Beaulieu, Jeremy M.; Matzke, Nicholas J.; O'Meara, Brian C. (2015). Non-null Effects of the Null Range in Biogeographic Models: Exploring Parameter Estimation in the DEC Model. bioRxiv,  http://biorxiv.org/content/early/2015/09/16/026914 )
+(For DEC  models, please cite: Massana, Kathryn A.; Beaulieu, Jeremy M.; Matzke, Nicholas J.; O'Meara, Brian C. (2015). Non-null Effects of the Null Range in Biogeographic Models: Exploring Parameter Estimation in the DEC Model. bioRxiv,  http://biorxiv.org/content/early/2015/09/16/026914 )
 
-### Goals for today
+## Goals for today
 1. Learn historical biogeography analyses. This involves working with phylogenies in R, an understanding of Maximum Likelihood (ML) & model comparision with thing like AIC.
 2. Bayesian approaches (not really covered today)
 <Br>
@@ -250,7 +251,7 @@ lines(x=P_heads_values_to_try, y=log_likelihoods)
 abline(v =  0.65, col = 'red', lwd = 3, lty = 3)
 par(mfrow=c(1,1))
 ```
-### Maximum likelihood optimization
+## Maximum likelihood optimization
 You can see that the maximum likelihood of the data occurs when P_heads is somewhere around 0.6 or 0.7. What is it exactly? We could just keep trying more values until we find whatever precision we desire.  But, R has a function for maximum likelihood optimization! It's called optim().  Optim() takes a function as an input. Fortunately, we've already written a function!
 <br><br>
 Let's modify our function a bit to return the log-likelihood, and print the result:
@@ -355,11 +356,11 @@ For a real-life example of ML analysis, try the tutorial for my biogeography R p
 <Br>
 <B> http://phylo.wdfiles.com/local--files/transsci/Matzke_2016_likelihood_tutorial_draft_text.pdf </b> An MLE tutorial hosted on Nick's site.
 
-#### Note on Bayesian Methods
+## Note on Bayesian Methods
 By the way, having done this ML search, we are very close to being able to do a Bayesian MCMC (Markov-Chain, Monte-Carlo) analysis.  However, we don't have time for this today.  Come talk to me this summer if you are interested!
 <Br><Br>
 
-### Phylogenies in R using APE
+## Phylogenies in R using APE
 Paradis's book on APE is linked from the course website:
 http://ib.berkeley.edu/courses/ib200b/IB200B_SyllabusHandouts.shtml
 
