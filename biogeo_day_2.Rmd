@@ -7,19 +7,24 @@ output:
     toc: yes
 ---
 
-##<span style="color:#0040FF">MORNING SESSION - Nick Matzke</span>
-####<B> Software and Tools for working with spatial data</b>
-#### *ARCGIS*: A windows program that costs alot and is huge. A big, integrated package that allows you to work with all data types in a GUI environment. Useful for building a big, complex map to print and provide to users & producing spatial statistics.
-#### *Grass*: Free GIS - Nick hasn't had any luck
-#### *ERDAS, ENVI*: For satellite data (huge files)
-#### <span style="color:#DF013A">*R*: Making figures for a paper, a simple map or cartoon - more on this below. Packages for spatial data in R have developers and users who hangout on r-sig-geo listserv. Also check out r-sig-phylo. Options include *sp, maptools, raster*, and more.</span>
-####<b> Basic Data Types</b>
-#### *Rasters*: "raster is faster". Representing data as a series of boxes. You will have a satelitte image or elevation grid, with implied ordering. These are fast, because you don't need spatial coordinates for each cell. You'll need metadata about colors and rows/columns included
-#### *Vectors*: "vector is correct-er". Looks like a series of points, lines, and polygons. These have exact coordinates, such as a lat-long. Underlying this is a reference table. This can result in a complex list of points and lines, so be mindful of conversions.<br>
-### PART 0: A Tutorial of Spatial Data
-#### <span style="color:#DF013A">*Note: several of these plots are hashed-out and not displayed to keep this document short. Simply remove the '#' before the plot() command to plot them in your own console.*</span>
-#### <a href = "www.nickmatzke.net">Click here </a href>to check out the code used to make Nick's map of where he's been. 
-#### <a href = "https://github.com/Pakillo/R-GIS-tutorial"> Click here</a href> to view the R-GIS Tutorial Github by Francisco Rodriguez-Sanchez .You can download the <a href = "https://github.com/Pakillo/R-GIS-tutorial/blob/master/R-GIS_tutorial.Rmd#vector"> RMD</a href> from that file from Github directly, but I have copied & annotated the code used specifically in-class here.<br>
+# MORNING SESSION - Nick Matzke
+
+## Software and Tools for working with spatial data 
+*ARCGIS*: A windows program that costs alot and is huge. A big, integrated package that allows you to work with all data types in a GUI environment. Useful for building a big, complex map to print and provide to users & producing spatial statistics. <br>
+*Grass*: Free GIS - Nick hasn't had any luck<br>
+ *ERDAS, ENVI*: For satellite data (huge files)<br>
+*R*: Making figures for a paper, a simple map or cartoon - more on this below. Packages for spatial data in R have developers and users who hangout on r-sig-geo listserv. Also check out r-sig-phylo. Options include *sp, maptools, raster*, and more.<br>
+## Basic Data Types 
+*Rasters*: "raster is faster". Representing data as a series of boxes. You will have a satelitte image or elevation grid, with implied ordering. These are fast, because you don't need spatial coordinates for each cell. You'll need metadata about colors and rows/columns included <br>
+*Vectors*: "vector is correct-er". Looks like a series of points, lines, and polygons. These have exact coordinates, such as a lat-long. Underlying this is a reference table. This can result in a complex list of points and lines, so be mindful of conversions.<br>
+
+## PART 0: A Tutorial of Spatial Data
+*Note: several of these plots are hashed-out and not displayed to keep this document short. Simply remove the '#' before the plot() command to plot them in your own console.*
+
+Check out the code used to make Nick's map of where he's been: www.nickmatzke.net <br>
+View the R-GIS Tutorial Github by Francisco Rodriguez-Sanchez:https://github.com/Pakillo/R-GIS-tutorial.
+You can download the RMD from that file from Github directly, but I have copied & annotated the code used specifically in-class here.
+
 ```{r, message = F, warning = F}
 setwd("C:/Users/M Kapur/Dropbox")
 # #### Basic packages
