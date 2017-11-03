@@ -259,8 +259,8 @@ There is an inherent problem with any AUC measure where all presences are coded 
 
 ## <span style="color:#0040FF"> AFTERNOON SESSION - Dan Warren</span>
 ### Working with ENMTools
-<a href = https://github.com/danlwarren/ENMTools> Haz clic </a href> for DL Warren's Github & Vignette where the ENMTools is sourced. <br> 
-<a href = http://enmtools.blogspot.com.es/> Here  </a href> is the ENMTools blog. <br> 
+DL Warren's Github & Vignette where the ENMTools is sourced at https://github.com/danlwarren/ENMTools.
+Here is the ENMTools blog: http://enmtools.blogspot.com.es/ <br> 
 Models require a homogeneous wrapper for modeling approaches that integrates bioclim, maxent, glm and other modeling approaches -- this requires a data input that ENMTools can use to execute them all together. These are done in the enmtools.species objects, which contain precense.points, background.points, species.names, range (a raster) and others. Each object is in a list -- which helps you quickly feed your data into various modeling frameworks.
 *Dan said we may not get to everything this week -- but the left-out material is covered on Git.*
 ```{r, warning = F, message = F}
